@@ -1,243 +1,531 @@
+//Import necessairy library
 #include <stdio.h>
 #include <stdlib.h>
+#include <getopt.h>
+#include <stdbool.h>
+#include <string.h>
+#include <limits.h>
+#define BUFF_SIZE 999999
 
-
-typedef struct
+enum CPUMethods
 {
-    unsigned burst;
-    unsigned arrival;
-    unsigned priority;
-    unsigned seq;  // sequence number for testing
-} Info;
-int show_i(Info*, const char*);
-int show_i(Info* info, const char* msg)
+	NONE,
+	FCFS,
+	SJF,
+	PS,
+	RR
+} method = NONE; // CPU Scheduling Methods Enumeration
+enum PMode
 {
-    if (info == NULL) return -1;
-    if (msg != NULL) printf("%s", msg);
-    printf(
-        "#%4d: B:%4d A:%4d P:%4d\n", info->seq, info->burst,
-        info->arrival, info->priority);
-    return 0;
-}
-typedef struct st_node
+	OFF,
+	ON
+} mode = OFF; // Preemtive Mode Enumeration
+
+struct node
 {
-    Info*    info;
-    struct st_node* next;
-    struct st_node* prev;
-} Node;
-
-typedef struct
-{
-    Node*    head;
-    Node*    tail;
-    unsigned size;
-} List;
-List* destroy_l(List* L)
-{
-    if (L == NULL) return NULL;
-    Node* p = L->head;
-    for (size_t i = 0; i < L->size; i += 1)
-    {  // remove one by one
-        Node* nx = p->next;
-        free(p->info);  // free data
-        free(p);        // free node
-        p = nx;
-    };            // for
-    free(L);      // free list
-    return NULL;  // to invalidate pointer
-}
-
-int empty(List* L)
-{
-    if (L == NULL) return 0;
-    return (L->size == 0);
-}
-
-List* create_l()
-{
-    List* nv = (List*)malloc(sizeof(List));
-    if (nv == NULL) return NULL;
-    nv->size = 0;  // vazia
-    nv->head = NULL;
-    nv->tail = NULL;
-    return nv;
-}
-
-int insert_n(Info* info, List* L)
-{  // inserts at the end of list
-    static unsigned seq = 1000;
-    if (L == NULL) return -1;
-    // new node here
-    Node* nv = (Node*)malloc(sizeof(Node));
-    // new data here: always copy
-    nv->info      = (Info*)malloc(sizeof(Info));
-    *(nv->info)   = *info;
-    nv->info->seq = seq++;  // USN
-    nv->prev      = L->tail;
-    nv->next      = NULL;
-    // ajusta os ponteiros da lista
-    L->size += 1;  // conta o novo
-    if (L->size == 1)
-        L->head = nv;
-    else { L->tail->next = nv; }
-    L->tail = nv;
-    return (int)L->size;
-}
-
-int remove_n(List* L)
-{  // remove from start
-    if (L == NULL) return -1;
-    if (L->size == 0) return -2;
-    Node* p = L->head->next;
-    free(L->head->info);  // data
-    free(L->head);        // node
-    L->head = p;
-    L->size -= 1;
-    if (L->size == 0) L->tail = NULL;
-    return (int)L->size;
-}
-
-int show_l(List* L, const char* tit)
-{
-    if (L == NULL) return -1;
-    if (tit != NULL) printf("%s", tit);
-    if (L->size == 0)
-        printf("  no elements\n");
-    else
-        printf("  %zd elements:\n", L->size);
-    if (L->head != NULL)
-        printf("  [First seq: %d", L->head->info->seq);
-    if (L->tail != NULL)
-        printf("  Last seq: %d]\n", L->tail->info->seq);
-
-    Node* p = L->head;
-    for (size_t i = 0; i < L->size; i += 1)
-    {
-        show_i(p->info, "\t");
-        p = p->next;
-    }
-    printf("\n");
-    return 0;
-}
-
-int size(List* L)
-{
-    if (L == NULL) return 0;
-    return (int)L->size;
-}
-List* deserialize(const char* file)
-{
-    FILE* in = fopen(file, "r");
-    if (in == NULL) return NULL;
-
-    Info  info  = {0};
-    List* new_l = create_l();  // new list here
-    while (3 == fscanf(
-                    in, "%d:%d:%d", &info.burst,
-                    &info.arrival, &info.priority))
-    {
-        // fprintf(
-        //     stderr, "%d:%d:%d\n", info.arrival,
-        //     info.burst, info.priority);
-        insert_n(&info, new_l);  // insert data into list
-    };
-    fclose(in);
-    return new_l;  // returns a list with the data on file
+	int process_id;
+	int burst_time;
+	int arrival_time;
+	int priority;
+	int waiting_time;
+	int turnaround_time;
+	int first_response;
+	int how_much_left;
+	int time_slices;
+	int last_slice_burst;
+	bool is_terminated;
+	bool in_cpu;
+	struct node *next;
 };
 
-int serialize(List* L, const char* file)
-{
-    if (L == NULL) return -1;
-    if (file == NULL)
-    {
-        printf("Missing file name\n");
-        return -2;
-    }
-    if (L->size == 0)
-    {
-        printf("Dataset is empty\n");
-        return -3;
-    }
-    FILE* out = fopen(file, "w");
-    if (out == NULL) return -3;
+char buff[BUFF_SIZE];
+char buffer_output[BUFF_SIZE * 6];
+char *input_filename = NULL;
+char *output_filename = NULL;
+bool fcfs_first = true;
+char *exe;
 
-    fprintf(
-        stderr,
-        "\"%s\"\n",
-        size(L), file);
-    Node* p = L->head;
-    for (size_t i = 0; i < L->size; i += 1)
-    {
-        fprintf(
-            out, "%d:%d:%d\n", p->info->burst,
-            p->info->arrival, p->info->priority);
-        p = p->next;
-    }
-    fprintf(out, "\n");
-    fclose(out);
-    fprintf(stderr, "\"%s\" closed\n", file);
-    return 0;
+
+struct node *header_original = NULL;
+struct node *create_node(int pid, int burst_time, int arrival_time, int priority)
+{
+	struct node *temp;
+	temp = (struct node *)malloc(sizeof(struct node));
+	memset(temp, '\0', sizeof(struct node));
+
+	temp->process_id = pid;
+	temp->burst_time = burst_time;
+	temp->arrival_time = arrival_time;
+	temp->priority = priority;
+	temp->waiting_time = 0;
+	temp->turnaround_time = 0;
+	temp->how_much_left = burst_time;
+	temp->first_response = 0;
+	temp->time_slices = 0;
+	temp->last_slice_burst = 0;
+	if (temp->burst_time == 0)
+		temp->is_terminated = false;
+	temp->in_cpu = false;
+	temp->next = NULL;
+
+	return temp;
 }
 
-// get the priority average from the list
-double pri_avg(List* L)
+// Insert back to the LL (Function)
+struct node *insert_back(struct node *header, int id, int burst_time, int arrival_time, int priority)
 {
-    if (L == NULL) return -1;
-    if (L->size == 0) return 0.;  // easy
-    double avg = 0.;
-    Node*  p   = L->head;
-    for (size_t i = 0; i < L->size; i += 1)
-    {  // here we have node data, one
-        // at a time
-        avg = avg + p->info->priority;
-        p   = p->next;
-    };
-    return (double)avg / size(L);
+	struct node *temp = create_node(id, burst_time, arrival_time, priority);
+	struct node *header_temp;
+
+	// Check if the linked list is empty
+	if (header == NULL)
+	{
+		header = temp;
+		return header;
+	}
+
+	header_temp = header;
+	while (header_temp->next != NULL) // Iterate until we reach the last node
+		header_temp = header_temp->next;
+
+	header_temp->next = temp;
+	return header;
 }
 
-double pri_fcfs(List* L)
+// Delete front of the LL (Function)
+struct node *delete_front(struct node *header)
 {
-    if (L == NULL) return -1;
-    if (L->size == 0) return 0.;  // easy
-    int wt = 0;
-    double awt = 0.;
-    double meanWt;
-    Node*  p   = L->head;
+	struct node *temp;
 
-    for (size_t i = 0; i < L->size; i += 1)
-    {  // here we have node data, one
-        // at a time
-        wt = p->info->arrival - p->info->burst;
-        p   = p->next;
-        printf("P[%d]%6.2d\n",i+1,wt);
-        awt = awt + wt;
-        meanWt = awt/ size(L);
-    };
+	if (header == NULL)
+	{
+		return header;
+	}
 
-    printf("Average Waiting time %6.2f\n", meanWt);
-    return wt;
+	temp = header;
+	header = header->next;
+	memset(temp, '\0', sizeof(struct node));
+	free(temp);
+	return header;
 }
 
-int main(void)
+// Displaying the Linked List Items(For Debugging Purposes Only) (Function)
+void display_LL(struct node *header)
 {
-    const char* in_file  = "input.txt";
-   // printf(
-     //   "deserialize(): building list from \"%s\"\n",
-       // in_file);
-    List* my_list = deserialize(in_file);
-    //show_l(my_list, "  ==> As read from file...\n");
+	struct node *temp = header;
+	while (temp != NULL)
+	{
+		int a, b, c, d, e, f, g, h, i, j;
+		bool t;
+		a = temp->process_id;
+		b = temp->burst_time;
+		c = temp->arrival_time;
+		d = temp->priority;
+		e = temp->waiting_time;
+		f = temp->turnaround_time;
+		g = temp->how_much_left;
+		h = temp->first_response;
+		i = temp->time_slices;
+		j = temp->last_slice_burst;
 
-    //printf("average priority is %6.2d\n", pri_avg(my_list));
-    pri_fcfs(my_list);
-    //printf("sum priority is %6.2f\n", );
+		printf("ID:%d\tBurst:%d\tArrival:%d\tPriority:%d\tWait:%d\tTurn:%d\tLeft:%d\tResponse:%d\tSlices:%d\tLastSlice:%d\n", a, b, c, d, e, f, g, h, i, j);
+		temp = temp->next;
+	}
 
-    const char* out_file = "output.txt";
-    int         res      = serialize(my_list, out_file);
-   // printf(
-     //   "serialize(): dumping list into \"%s\" "
-       // "returned %d\n",
-        //out_file, res);
-
-    my_list = destroy_l(my_list);
-    return 0;
+	getchar();
+	getchar();
 }
+
+// Cloning Main LL (Function)
+struct node *clone_LL(struct node *header)
+{
+	struct node *header_temp = header;
+	struct node *clone_header = NULL;
+
+	while (header_temp != NULL)
+	{
+		int pid = 0, burst = 0, arrival = 0, priority = 0;
+		pid = header_temp->process_id;
+		burst = header_temp->burst_time;
+		arrival = header_temp->arrival_time;
+		priority = header_temp->priority;
+		clone_header = insert_back(clone_header, pid, burst, arrival, priority);
+
+		header_temp = header_temp->next;
+	}
+
+	return clone_header;
+}
+
+// This funtions is used to print programs usage and what arguments are needed to pass (Function)
+
+void print_usage()
+{
+	printf("Usage: %s -f <input filename> -o <output filename>\n", exe);
+	exit(1);
+}
+// Reading from Input File to Write it to LL (Function)
+void write_input_to_LL(char *input_filename)
+{
+	FILE *finput = fopen(input_filename, "r");
+	int id_counter = 1;
+	if (feof(finput))
+	{
+		printf("The input file is empty\n");
+		exit(1);
+	}
+	else
+	{
+		while (!feof(finput)) // Reading the input file and recording the values to Linked List
+		{
+			int a, b, c;
+			fscanf(finput, "%d:%d:%d\n", &a, &b, &c);
+			header_original = insert_back(header_original, id_counter, a, b, c);
+			id_counter++;
+		}
+	}
+	fclose(finput);
+}
+void fcfs();
+
+// Counts How many process' are in the LL (Function)
+int process_counter(struct node *header)
+{
+	struct node *temp = header;
+	int counter = 0;
+	while (temp != NULL)
+	{
+		counter++;
+		temp = temp->next;
+	}
+
+	return counter;
+}
+
+// Swapping nodes (Function)
+struct node *swap_nodes(struct node *temp1, struct node *temp2)
+{
+	struct node *tmp = temp2->next;
+	temp2->next = temp1;
+	temp1->next = tmp;
+	return temp2;
+}
+
+// Sorts LL in ascending order (Function)
+void bubble_sort(struct node **header, int counter, char *sort_mode)
+{
+	struct node **header_temp;
+	int swapped, max_at = 0;
+	int i, j;
+
+	for (i = 0; i < counter; i++)
+	{
+		header_temp = header;
+		swapped = 0;
+		max_at = 0;
+
+		for (j = 0; j < counter - 1 - i; j++)
+		{
+			struct node *temp1 = *header_temp;
+			struct node *temp2 = temp1->next;
+
+			if (!strcmp(sort_mode, "PID"))
+			{
+				if (temp1->process_id >= temp2->process_id)
+				{
+					*header_temp = swap_nodes(temp1, temp2);
+					swapped = 1;
+				}
+				header_temp = &(*header_temp)->next; // Setting the header_temp's addres to the address of next node which is in the header_temp's address
+			}
+
+			else if (!strcmp(sort_mode, "AT"))
+			{
+				if (temp1->arrival_time > temp2->arrival_time)
+				{
+					*header_temp = swap_nodes(temp1, temp2);
+					swapped = 1;
+				}
+
+				else if (temp1->arrival_time == temp2->arrival_time)
+				{
+					if (temp1->process_id > temp2->process_id)
+					{
+						*header_temp = swap_nodes(temp1, temp2);
+						swapped = 1;
+					}
+				}
+				header_temp = &(*header_temp)->next;
+			}
+
+			else if (!strcmp(sort_mode, "SJF"))
+			{
+				if (temp1->arrival_time <= max_at && temp2->arrival_time <= max_at)
+				{
+					if (temp1->burst_time > temp2->burst_time)
+					{
+						*header_temp = swap_nodes(temp1, temp2);
+						swapped = 1;
+					}
+
+					else if (temp1->burst_time == temp2->burst_time)
+					{
+						if (temp1->process_id > temp2->process_id)
+						{
+							*header_temp = swap_nodes(temp1, temp2);
+							swapped = 1;
+						}
+					}
+					max_at += (*header_temp)->burst_time;
+				}
+				else
+				{
+					if (temp2->arrival_time > max_at)
+						max_at = temp2->arrival_time;
+				}
+
+				header_temp = &(*header_temp)->next;
+			}
+
+			else if (!strcmp(sort_mode, "PS"))
+			{
+				if (temp1->arrival_time <= max_at && temp2->arrival_time <= max_at)
+				{
+					if (temp1->priority > temp2->priority)
+					{
+						*header_temp = swap_nodes(temp1, temp2);
+						swapped = 1;
+					}
+
+					else if (temp1->priority == temp2->priority)
+					{
+						if (temp1->process_id > temp2->process_id)
+						{
+							*header_temp = swap_nodes(temp1, temp2);
+							swapped = 1;
+						}
+					}
+					max_at += (*header_temp)->burst_time;
+				}
+				else
+				{
+					if (temp2->arrival_time > max_at)
+						max_at = temp2->arrival_time;
+				}
+
+				header_temp = &(*header_temp)->next;
+			}
+		}
+
+		if (swapped == 0)
+		{
+			break;
+		}
+	}
+}
+
+// Checking if all the processes are done returning true if all done (Function)
+bool is_all_done(struct node *header)
+{
+	bool done = true;
+	while (header != NULL)
+	{
+		if (!header->is_terminated)
+			done = false;
+		header = header->next;
+	}
+
+	return done;
+}
+
+// Checking if all the processes before arrival time is done (Function)
+bool is_previous_ones_done(struct node *header, int at_limit)
+{
+	bool done = true;
+	while (header != NULL)
+	{
+		if (header->arrival_time <= at_limit)
+		{
+			if (!header->is_terminated)
+			{
+				done = false;
+			}
+		}
+		header = header->next;
+	}
+
+	return done;
+}
+
+// Finding the node which has the least time left
+struct node *find_least_left(struct node *header, int at_limit)
+{
+	struct node *temp = NULL;
+	int x = INT_MAX;
+	while (header != NULL)
+	{
+		if (!header->is_terminated)
+		{
+			if (header->arrival_time <= at_limit)
+			{
+				if (header->how_much_left < x)
+				{
+					temp = header;
+					x = header->how_much_left;
+				}
+			}
+		}
+		header = header->next;
+	}
+
+	return temp;
+}
+
+// Finding the node which has the least priority
+struct node *find_least_priority(struct node *header, int at_limit)
+{
+	struct node *temp = NULL;
+	int x = INT_MAX;
+	while (header != NULL)
+	{
+		if (!header->is_terminated)
+		{
+			if (header->arrival_time <= at_limit)
+			{
+				if (header->priority < x)
+				{
+					temp = header;
+					x = header->priority;
+				}
+			}
+		}
+		header = header->next;
+	}
+
+	return temp;
+}
+
+int main(int argc, char *argv[])
+{
+    exe = argv[0];
+    int options = 0;
+    // Here we check if the correct options are used
+	while ((options = getopt(argc, argv, "f:o:")) != -1)
+	{
+		switch (options)
+		{
+		case 'f':
+			input_filename = optarg;
+			break;
+		case 'o':
+			output_filename = optarg;
+			break;
+		default:
+			print_usage();
+			break;
+		}
+	}
+    // Here we check if the arguments are passed for options
+	if (input_filename == NULL || output_filename == NULL)
+	{
+		print_usage();
+	}
+
+	FILE *finput = fopen(input_filename, "r");
+	if (finput == NULL) // Checking if the input file argument exists.
+	{
+		printf("The argument that you passed as input file does not exists.\n");
+		printf("Please check the input file argument and run the program again\n");
+		exit(1);
+	}
+	fclose(finput);
+
+	write_input_to_LL(input_filename);
+
+	fcfs();
+
+	return 0;
+}
+// Creating node (Function)
+
+
+
+void fcfs()
+{
+	struct node *clone_header = clone_LL(header_original);
+	struct node *temp1, *temp2, *t;
+	int program_counter = 0;
+	float average_wait = 0.0f;
+	int number_of_process = process_counter(clone_header);
+	bool is_first = true;
+	bubble_sort(&clone_header, number_of_process, "AT");
+	temp1 = clone_LL(clone_header);
+	while (clone_header != NULL)
+	{
+		clone_header = delete_front(clone_header);
+	}
+	t = temp2 = temp1;
+
+	while (temp1 != NULL)
+	{
+		if (temp1->arrival_time <= program_counter)
+		{
+			program_counter += temp1->burst_time;
+			temp1->turnaround_time = program_counter;
+			if (is_first)
+			{
+				if ((temp1->waiting_time = temp1->turnaround_time - temp1->burst_time) < 0)
+					temp1->waiting_time = 0;
+				is_first = false;
+			}
+			else
+			{
+				if ((temp1->waiting_time = temp1->turnaround_time - temp1->burst_time - temp1->arrival_time) < 0)
+					temp1->waiting_time = 0;
+			}
+		}
+
+		else
+		{
+			program_counter = temp1->arrival_time;
+			program_counter += temp1->burst_time;
+			temp1->turnaround_time = program_counter;
+			if ((temp1->waiting_time = temp1->turnaround_time - temp1->burst_time - temp1->arrival_time) < 0)
+				temp1->waiting_time = 0;
+		}
+
+		temp1 = temp1->next;
+	}
+
+	strcpy(buff, "");
+	bubble_sort(&temp2, number_of_process, "PID");
+	system("clear");
+	strcat(buff, "Scheduling Method: First Come First Served\n");
+	strcat(buff, "Process Waiting Times:\n");
+	while (temp2 != NULL)
+	{
+		int pid = temp2->process_id;
+		int wait = temp2->waiting_time;
+		average_wait += wait;
+		char buff_1[20] = "";
+		snprintf(buff_1, 19, "PS%d: %d ms\n", pid, wait);
+		strcat(buff, buff_1);
+		temp2 = temp2->next;
+	}
+	average_wait /= number_of_process;
+	char buff_2[40];
+	snprintf(buff_2, 39, "Average Waiting Time: %.3f ms\n\n", average_wait);
+	strcat(buff, buff_2);
+	if (fcfs_first)
+	{
+		strcat(buffer_output, buff);
+		fcfs_first = false;
+	}
+	printf("%s", buff);
+
+	while (t != NULL)
+	{
+		t = delete_front(t);
+	}
+}
+
