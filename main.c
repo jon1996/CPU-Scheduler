@@ -527,5 +527,14 @@ void fcfs()
 	{
 		t = delete_front(t);
 	}
+	printf("%s", buffer_output);
+	FILE *f = fopen(output_filename, "w");
+	fprintf(f, "%s", buffer_output);
+	fclose(f);
+
+	while (header_original != NULL)
+	{
+		header_original = delete_front(header_original);
+	}
 }
 
