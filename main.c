@@ -7,6 +7,20 @@
 #include <limits.h>
 #define BUFF_SIZE 999999
 
+enum CPUMethods
+{
+	NONE,
+	FCFS,
+	SJF,
+	PS,
+	RR
+} method = NONE; // CPU Scheduling Methods Enumeration
+enum PMode
+{
+	OFF,
+	ON
+} mode = OFF; // Preemtive Mode Enumeration
+
 struct node
 {
 	int process_id;
@@ -420,20 +434,48 @@ int main(int argc, char *argv[])
 	FILE *finput = fopen(input_filename, "r");
 	if (finput == NULL) // Checking if the input file argument exists.
 	{
-		printf("The argument that you passed as input file does not exists.\n");
-		printf("Please check the input file argument and run the program again\n");
+		printf("this input file does not exist\n");
 		exit(1);
 	}
 	fclose(finput);
 
 	write_input_to_LL(input_filename);
 
-	fcfs();
+	MainMenu();
 
 	return 0;
 }
-// Creating node (Function)
 
+void MainMenu()
+{
+  int n;
+  printf("\t\t CPU schedule Simulator\t\n");
+  printf("1) Scheduling Method(None)\n");
+  printf("2) Preemptive Mode\n");
+  printf("3) Show Result\n");
+  printf("4) End Program\n");
+  printf("Option > \n");
+  scanf("%d",&n);
+  if(n==1)
+  {
+     menu();
+  }else if(n ==2)
+  {
+      printf("Preemptive Mode");
+  }else if(n == 3)
+  {
+      printf("Show Result");
+  }else if(n == 4)
+  {
+      printf("End Program");
+  }
+}
+void menu()
+{
+    system("clear");
+    printf("\t\t Menu \t\n");
+  printf("1) Scheduling Method(None)\n");
+}
 
 
 void fcfs()
