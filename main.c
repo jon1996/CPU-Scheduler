@@ -7,20 +7,6 @@
 #include <limits.h>
 #define BUFF_SIZE 999999
 
-enum CPUMethods
-{
-	NONE,
-	FCFS,
-	SJF,
-	PS,
-	RR
-} method = NONE; // CPU Scheduling Methods Enumeration
-enum PMode
-{
-	OFF,
-	ON
-} mode = OFF; // Preemtive Mode Enumeration
-
 struct node
 {
 	int process_id;
@@ -527,6 +513,7 @@ void fcfs()
 	{
 		t = delete_front(t);
 	}
+	//write output in the output file
 	printf("%s", buffer_output);
 	FILE *f = fopen(output_filename, "w");
 	fprintf(f, "%s", buffer_output);
