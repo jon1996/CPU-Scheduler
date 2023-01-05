@@ -15,11 +15,7 @@ enum CPUMethods
 	PS,
 	RR
 } method = NONE; // CPU Scheduling Methods Enumeration
-enum PMode
-{
-	OFF,
-	ON
-} mode = OFF; // Preemtive Mode Enumeration
+
 
 struct node
 {
@@ -44,6 +40,9 @@ char *input_filename = NULL;
 char *output_filename = NULL;
 bool fcfs_first = true;
 char *exe;
+bool mode = false;
+char *mode_char = "OFF";
+char *method_char = "None";
 
 
 struct node *header_original = NULL;
@@ -441,27 +440,46 @@ int main(int argc, char *argv[])
 
 	write_input_to_LL(input_filename);
 
-	MainMenu();
+	menu();
 
 	return 0;
 }
 
-void MainMenu()
+void menu()
 {
-  int n;
+  system("clear");
+   int n;
   printf("\t\t CPU schedule Simulator\t\n");
-  printf("1) Scheduling Method(None)\n");
-  printf("2) Preemptive Mode\n");
+  printf("1) Scheduling Method(%s)\n",method_char);
+  if(mode==false)
+  {
+   printf("2) Preemptive Mode (OFF)\n");
+    mode_char == "OFF";
+
+  }else{
+      printf("2) Preemptive Mode (ON)\n");
+      mode_char == "ON";
+  }
+
   printf("3) Show Result\n");
   printf("4) End Program\n");
   printf("Option > \n");
   scanf("%d",&n);
   if(n==1)
   {
-     menu();
+      if(mode==false)
+      {
+           menu4();
+      }
+      else if(mode==true)
+      {
+          notpreemotivemenu();
+      }
+
+
   }else if(n ==2)
   {
-      printf("Preemptive Mode");
+      menu2();
   }else if(n == 3)
   {
       printf("Show Result");
@@ -469,15 +487,147 @@ void MainMenu()
   {
       printf("End Program");
   }
+  else
+    {
+        printf("Please select a valid option\n");
+        system("sleep 2");
+        menu();
+    }
 }
-void menu()
+//Not Preemptive
+void notpreemotivemenu()
 {
     system("clear");
+    int n;
     printf("\t\t Menu \t\n");
-  printf("1) Scheduling Method(None)\n");
+    printf("1-) None: None of scheduling method chosen\n");
+    printf("2-) Shortest-Job-First Scheduling\n");
+    printf("3-) Priority Scheduling\n");
+    printf("Option > ");
+    scanf("%1d", &n);
+    if(n==1)
+    {
+
+        method_char = "None";
+         menu();
+    }
+    else if(n==2)
+    {
+
+        method_char = "SJS";
+          menu();
+    }
+    else if(n==3)
+    {
+        method_char = "Priority";
+        menu();
+    }
+    else
+    {
+        printf("Please select a valid option\n");
+        system("sleep 2");
+        notpreemotivemenu();
+    }
 }
+// preemtive mode is on
+void menu4()
+{
+    system("clear");
+    int n;
+    printf("1-) None: None of scheduling method chosen\n");
+		printf("2-) First Come, First Served Scheduling\n");
+		printf("3-) Shortest-Job-First Scheduling\n");
+		printf("4-) Priority Scheduling\n");
+		printf("5-) Round-Robin Scheduling\n");
+		printf("Option > ");
+    scanf("%1d", &n);
+    if(n==1)
+    {
 
+        method_char = "None";
+         menu();
+    }
+    else if(n==2)
+    {
 
+        method_char = "FCFS";
+		fcfs();
+          menu();
+    }
+    else if(n==3)
+    {
+        method_char = "SJB";
+        menu();
+    }
+    else if(n==4)
+    {
+        method_char = "Priority";
+        menu();
+    }
+    else if(n==5)
+    {
+        method_char = "RR";
+        menu();
+    }else
+    {
+        printf("Please select a valid option\n");
+        system("sleep 2");
+        menu4();
+    }
+}
+//Change mode
+void menu2()
+{
+    system("clear");
+    int n;
+    printf("\t\t Change mode \t\n");
+    if(method_char=="None")
+    {
+    printf("There is no selected scheduling method in the Main Menu \n");
+    printf("1-) ON\n");
+    printf("2-) OFF\n");
+    printf("3) Back to main menu \n");
+     printf("Option > ");
+    }
+    else if(method_char!="None"){
+        printf("1-) ON\n");
+    printf("2-) OFF\n");
+    printf("Option > ");
+    }
+
+    scanf("%1d", &n);
+    if(n==1)
+    {
+        mode=true;
+         mode_char == "ON";
+         if(method_char == "FCFS" ||method_char == "RR")
+        {
+            system("clear");
+            printf("Preemtive mode is not available for selected Scheduling Method\n");
+            printf("Select another shedule method for this mode\n");
+            system("sleep 3");
+             menu2();
+        }
+        else{
+             menu();
+        }
+
+    }else if(n==2){
+    mode=false;
+     mode_char == "OFF";
+    menu();
+    }
+    else if(n==3)
+    {
+         menu();
+    }
+    else
+    {
+        printf("Please select a valid option\n");
+        system("sleep 2");
+        menu2();
+    }
+}
 void fcfs()
 {
 	struct node *clone_header = clone_LL(header_original);
