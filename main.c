@@ -7,14 +7,7 @@
 #include <limits.h>
 #define BUFF_SIZE 999999
 
-enum CPUMethods
-{
-	NONE,
-	FCFS,
-	SJF,
-	PS,
-	RR
-} method = NONE; // CPU Scheduling Methods Enumeration
+
 
 
 struct node
