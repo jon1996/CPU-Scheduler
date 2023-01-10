@@ -36,7 +36,13 @@ char *exe;
 bool mode = false;
 char *mode_char = "OFF";
 char *method_char = "None";
-
+bool fcfs_first = true;
+bool sjf_np_first = true;
+bool sjf_p_first = true;
+bool ps_np_first = true;
+bool ps_p_first = true;
+bool rr_first = true;
+int time_quantum;
 
 struct node *header_original = NULL;
 struct node *create_node(int pid, int burst_time, int arrival_time, int priority)
