@@ -36,7 +36,6 @@ char *exe;
 bool mode = false;
 char *mode_char = "OFF";
 char *method_char = "None";
-bool fcfs_first = true;
 bool sjf_np_first = true;
 bool sjf_p_first = true;
 bool ps_np_first = true;
@@ -484,7 +483,7 @@ void menu()
       printf("Show Result");
   }else if(n == 4)
   {
-      printf("End Program");
+      menu5();
   }
   else
     {
@@ -514,11 +513,13 @@ void notpreemotivemenu()
     {
 
         method_char = "SJS";
+		sjf_np();
           menu();
     }
     else if(n==3)
     {
         method_char = "Priority";
+		ps_np();
         menu();
     }
     else
@@ -556,16 +557,19 @@ void menu4()
     else if(n==3)
     {
         method_char = "SJB";
+		sjf_p();
         menu();
     }
     else if(n==4)
     {
         method_char = "Priority";
+		ps_p();
         menu();
     }
     else if(n==5)
     {
         method_char = "RR";
+		rr();
         menu();
     }else
     {
@@ -627,6 +631,64 @@ void menu2()
         menu2();
     }
 }
+
+// Time Quantum Asking Menu (Function)
+void tq_menu()
+{
+	while (true)
+	{
+		system("clear");
+		printf("Please enter the time quantum for Round-Robin Method\n");
+		printf("Time Quantum > ");
+		scanf("%d", &time_quantum);
+		break;
+	}
+}
+
+
+// End Program Menu (Function)
+void menu5()
+{
+	if (time_quantum == 0)
+		tq_menu();
+	if (fcfs_first)
+	{
+		fcfs();
+	}
+	if (sjf_np_first)
+	{
+		sjf_np();
+	}
+	if (sjf_p_first)
+	{
+		sjf_p();
+	}
+	if (ps_np_first)
+	{
+		ps_np();
+	}
+	if (ps_p_first)
+	{
+		ps_p();
+	}
+	if (rr_first)
+	{
+		rr();
+	}
+
+	printf("%s", buffer_output);
+	FILE *f = fopen(output_filename, "w");
+	fprintf(f, "%s", buffer_output);
+	fclose(f);
+
+	while (header_original != NULL)
+	{
+		header_original = delete_front(header_original);
+	}
+
+	exit(0);
+}
+
 // First-Come-First-Serve (Function)
 void fcfs()
 {

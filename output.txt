@@ -1,0 +1,54 @@
+Scheduling Method: First Come First Served
+Process Waiting Times:
+PS1: 0 ms
+PS2: 5 ms
+PS3: 0 ms
+PS4: 8 ms
+PS5: 3 ms
+Average Waiting Time: 3.200 ms
+
+Scheduling Method: Shortest Job First (Non-Preemtive)
+Process Waiting Times:
+PS1: 0 ms
+PS2: 6 ms
+PS3: 0 ms
+PS4: 5 ms
+PS5: 3 ms
+Average Waiting Time: 2.800 ms
+
+Scheduling Method: Shortest Job First Scheduling (Preemtive)
+Process Waiting Times:
+PS1: 1 ms
+PS2: 6 ms
+PS3: 0 ms
+PS4: 0 ms
+PS5: 4 ms
+Average Waiting Time: 2.200 ms
+
+Scheduling Method: Priority Scheduling (Non-Preemtive)
+Process Waiting Times:
+PS1: 0 ms
+PS2: 5 ms
+PS3: 0 ms
+PS4: 8 ms
+PS5: 3 ms
+Average Waiting Time: 3.200 ms
+
+Scheduling Method: Priority Scheduling (Preemtive)
+Process Waiting Times:
+PS1: 0 ms
+PS2: 5 ms
+PS3: 0 ms
+PS4: 8 ms
+PS5: 3 ms
+Average Waiting Time: 3.200 ms
+
+Scheduling Method: Round-Robin (Time quantum: 2)
+Process Waiting Times:
+PS1: 5 ms
+PS2: 6 ms
+PS3: 0 ms
+PS4: 4 ms
+PS5: 6 ms
+Average Waiting Time: 4.200 ms
+
