@@ -12,67 +12,66 @@
 
 struct node
 {
-	int process_id;
-	int burst_time;
-	int arrival_time;
+	int Id;
+	int BT;
+	int AT;
 	int priority;
-	int waiting_time;
-	int turnaround_time;
-	int first_response;
-	int how_much_left;
-	int time_slices;
-	int last_slice_burst;
-	bool is_terminated;
-	bool in_cpu;
+	int WT;
+	int TAT;
+	int RT;
+	int LHM;
+	int ST;
+	int BLS;
+	bool EXT;
+	bool in_Q;
 	struct node *next;
 };
 
 char buff[BUFF_SIZE];
 char buffer_output[BUFF_SIZE * 6];
-char *input_filename = NULL;
-char *output_filename = NULL;
-bool fcfs_first = true;
+char *inputFile = NULL;
+char *outFile = NULL;
+bool firstComeFirst = true;
 char *exe;
 bool mode = false;
 char *mode_char = "OFF";
 char *method_char = "None";
-bool sjf_np_first = true;
-bool sjf_p_first = true;
-bool ps_np_first = true;
-bool ps_p_first = true;
-bool rr_first = true;
-int time_quantum;
+bool shortNotPreFirst = true;
+bool shortPreFirst = true;
+bool priorNotPreFirst = true;
+bool priorPreFirst = true;
+bool RoundRFirst = true;
+int TQ;
 char c;
 
 struct node *header_original = NULL;
-struct node *create_node(int pid, int burst_time, int arrival_time, int priority)
+struct node *createNode(int pid, int BT, int AT, int priority)
 {
 	struct node *temp;
 	temp = (struct node *)malloc(sizeof(struct node));
 	memset(temp, '\0', sizeof(struct node));
 
-	temp->process_id = pid;
-	temp->burst_time = burst_time;
-	temp->arrival_time = arrival_time;
+	temp->Id = pid;
+	temp->BT = BT;
+	temp->AT = AT;
 	temp->priority = priority;
-	temp->waiting_time = 0;
-	temp->turnaround_time = 0;
-	temp->how_much_left = burst_time;
-	temp->first_response = 0;
-	temp->time_slices = 0;
-	temp->last_slice_burst = 0;
-	if (temp->burst_time == 0)
-		temp->is_terminated = false;
-	temp->in_cpu = false;
+	temp->WT = 0;
+	temp->TAT = 0;
+	temp->LHM = BT;
+	temp->RT = 0;
+	temp->ST = 0;
+	temp->BLS = 0;
+	if (temp->BT == 0)
+		temp->EXT = false;
+	temp->in_Q = false;
 	temp->next = NULL;
 
 	return temp;
 }
 
-// Insert back to the LL (Function)
-struct node *insert_back(struct node *header, int id, int burst_time, int arrival_time, int priority)
+struct node *insertBack(struct node *header, int id, int BT, int AT, int priority)
 {
-	struct node *temp = create_node(id, burst_time, arrival_time, priority);
+	struct node *temp = createNode(id, BT, AT, priority);
 	struct node *header_temp;
 
 	// Check if the linked list is empty
@@ -90,8 +89,7 @@ struct node *insert_back(struct node *header, int id, int burst_time, int arriva
 	return header;
 }
 
-// Delete front of the LL (Function)
-struct node *delete_front(struct node *header)
+struct node *deleteFront(struct node *header)
 {
 	struct node *temp;
 
@@ -107,47 +105,21 @@ struct node *delete_front(struct node *header)
 	return header;
 }
 
-// Displaying the Linked List Items(For Debugging Purposes Only) (Function)
-void display_LL(struct node *header)
-{
-	struct node *temp = header;
-	while (temp != NULL)
-	{
-		int a, b, c, d, e, f, g, h, i, j;
-		bool t;
-		a = temp->process_id;
-		b = temp->burst_time;
-		c = temp->arrival_time;
-		d = temp->priority;
-		e = temp->waiting_time;
-		f = temp->turnaround_time;
-		g = temp->how_much_left;
-		h = temp->first_response;
-		i = temp->time_slices;
-		j = temp->last_slice_burst;
 
-		printf("ID:%d\tBurst:%d\tArrival:%d\tPriority:%d\tWait:%d\tTurn:%d\tLeft:%d\tResponse:%d\tSlices:%d\tLastSlice:%d\n", a, b, c, d, e, f, g, h, i, j);
-		temp = temp->next;
-	}
 
-	getchar();
-	getchar();
-}
-
-// Cloning Main LL (Function)
-struct node *clone_LL(struct node *header)
+struct node *cloneList(struct node *header)
 {
 	struct node *header_temp = header;
 	struct node *clone_header = NULL;
 
 	while (header_temp != NULL)
 	{
-		int pid = 0, burst = 0, arrival = 0, priority = 0;
-		pid = header_temp->process_id;
-		burst = header_temp->burst_time;
-		arrival = header_temp->arrival_time;
+		int pid = 0, burst = 0, aRoundRival = 0, priority = 0;
+		pid = header_temp->Id;
+		burst = header_temp->BT;
+		aRoundRival = header_temp->AT;
 		priority = header_temp->priority;
-		clone_header = insert_back(clone_header, pid, burst, arrival, priority);
+		clone_header = insertBack(clone_header, pid, burst, aRoundRival, priority);
 
 		header_temp = header_temp->next;
 	}
@@ -155,17 +127,15 @@ struct node *clone_LL(struct node *header)
 	return clone_header;
 }
 
-// This funtions is used to print programs usage and what arguments are needed to pass (Function)
-
-void print_usage()
+void pHelp()
 {
 	printf("Usage: %s -f <input filename> -o <output filename>\n", exe);
 	exit(1);
 }
-// Reading from Input File to Write it to LL (Function)
-void write_input_to_LL(char *input_filename)
+
+void putInputToList(char *inputFile)
 {
-	FILE *finput = fopen(input_filename, "r");
+	FILE *finput = fopen(inputFile, "r");
 	int id_counter = 1;
 	if (feof(finput))
 	{
@@ -178,16 +148,14 @@ void write_input_to_LL(char *input_filename)
 		{
 			int a, b, c;
 			fscanf(finput, "%d:%d:%d\n", &a, &b, &c);
-			header_original = insert_back(header_original, id_counter, a, b, c);
+			header_original = insertBack(header_original, id_counter, a, b, c);
 			id_counter++;
 		}
 	}
 	fclose(finput);
 }
-void fcfs();
 
-// Counts How many process' are in the LL (Function)
-int process_counter(struct node *header)
+int pCounter(struct node *header)
 {
 	struct node *temp = header;
 	int counter = 0;
@@ -200,8 +168,7 @@ int process_counter(struct node *header)
 	return counter;
 }
 
-// Swapping nodes (Function)
-struct node *swap_nodes(struct node *temp1, struct node *temp2)
+struct node *swapNode(struct node *temp1, struct node *temp2)
 {
 	struct node *tmp = temp2->next;
 	temp2->next = temp1;
@@ -209,7 +176,6 @@ struct node *swap_nodes(struct node *temp1, struct node *temp2)
 	return temp2;
 }
 
-// Sorts LL in ascending order (Function)
 void bubble_sort(struct node **header, int counter, char *sort_mode)
 {
 	struct node **header_temp;
@@ -229,9 +195,9 @@ void bubble_sort(struct node **header, int counter, char *sort_mode)
 
 			if (!strcmp(sort_mode, "PID"))
 			{
-				if (temp1->process_id >= temp2->process_id)
+				if (temp1->Id >= temp2->Id)
 				{
-					*header_temp = swap_nodes(temp1, temp2);
+					*header_temp = swapNode(temp1, temp2);
 					swapped = 1;
 				}
 				header_temp = &(*header_temp)->next; // Setting the header_temp's addres to the address of next node which is in the header_temp's address
@@ -239,17 +205,17 @@ void bubble_sort(struct node **header, int counter, char *sort_mode)
 
 			else if (!strcmp(sort_mode, "AT"))
 			{
-				if (temp1->arrival_time > temp2->arrival_time)
+				if (temp1->AT > temp2->AT)
 				{
-					*header_temp = swap_nodes(temp1, temp2);
+					*header_temp = swapNode(temp1, temp2);
 					swapped = 1;
 				}
 
-				else if (temp1->arrival_time == temp2->arrival_time)
+				else if (temp1->AT == temp2->AT)
 				{
-					if (temp1->process_id > temp2->process_id)
+					if (temp1->Id > temp2->Id)
 					{
-						*header_temp = swap_nodes(temp1, temp2);
+						*header_temp = swapNode(temp1, temp2);
 						swapped = 1;
 					}
 				}
@@ -258,28 +224,28 @@ void bubble_sort(struct node **header, int counter, char *sort_mode)
 
 			else if (!strcmp(sort_mode, "SJF"))
 			{
-				if (temp1->arrival_time <= max_at && temp2->arrival_time <= max_at)
+				if (temp1->AT <= max_at && temp2->AT <= max_at)
 				{
-					if (temp1->burst_time > temp2->burst_time)
+					if (temp1->BT > temp2->BT)
 					{
-						*header_temp = swap_nodes(temp1, temp2);
+						*header_temp = swapNode(temp1, temp2);
 						swapped = 1;
 					}
 
-					else if (temp1->burst_time == temp2->burst_time)
+					else if (temp1->BT == temp2->BT)
 					{
-						if (temp1->process_id > temp2->process_id)
+						if (temp1->Id > temp2->Id)
 						{
-							*header_temp = swap_nodes(temp1, temp2);
+							*header_temp = swapNode(temp1, temp2);
 							swapped = 1;
 						}
 					}
-					max_at += (*header_temp)->burst_time;
+					max_at += (*header_temp)->BT;
 				}
 				else
 				{
-					if (temp2->arrival_time > max_at)
-						max_at = temp2->arrival_time;
+					if (temp2->AT > max_at)
+						max_at = temp2->AT;
 				}
 
 				header_temp = &(*header_temp)->next;
@@ -287,28 +253,28 @@ void bubble_sort(struct node **header, int counter, char *sort_mode)
 
 			else if (!strcmp(sort_mode, "PS"))
 			{
-				if (temp1->arrival_time <= max_at && temp2->arrival_time <= max_at)
+				if (temp1->AT <= max_at && temp2->AT <= max_at)
 				{
 					if (temp1->priority > temp2->priority)
 					{
-						*header_temp = swap_nodes(temp1, temp2);
+						*header_temp = swapNode(temp1, temp2);
 						swapped = 1;
 					}
 
 					else if (temp1->priority == temp2->priority)
 					{
-						if (temp1->process_id > temp2->process_id)
+						if (temp1->Id > temp2->Id)
 						{
-							*header_temp = swap_nodes(temp1, temp2);
+							*header_temp = swapNode(temp1, temp2);
 							swapped = 1;
 						}
 					}
-					max_at += (*header_temp)->burst_time;
+					max_at += (*header_temp)->BT;
 				}
 				else
 				{
-					if (temp2->arrival_time > max_at)
-						max_at = temp2->arrival_time;
+					if (temp2->AT > max_at)
+						max_at = temp2->AT;
 				}
 
 				header_temp = &(*header_temp)->next;
@@ -322,13 +288,12 @@ void bubble_sort(struct node **header, int counter, char *sort_mode)
 	}
 }
 
-// Checking if all the processes are done returning true if all done (Function)
-bool is_all_done(struct node *header)
+bool isDone(struct node *header)
 {
 	bool done = true;
 	while (header != NULL)
 	{
-		if (!header->is_terminated)
+		if (!header->EXT)
 			done = false;
 		header = header->next;
 	}
@@ -336,15 +301,14 @@ bool is_all_done(struct node *header)
 	return done;
 }
 
-// Checking if all the processes before arrival time is done (Function)
-bool is_previous_ones_done(struct node *header, int at_limit)
+bool isPrevDone(struct node *header, int at_limit)
 {
 	bool done = true;
 	while (header != NULL)
 	{
-		if (header->arrival_time <= at_limit)
+		if (header->AT <= at_limit)
 		{
-			if (!header->is_terminated)
+			if (!header->EXT)
 			{
 				done = false;
 			}
@@ -355,21 +319,20 @@ bool is_previous_ones_done(struct node *header, int at_limit)
 	return done;
 }
 
-// Finding the node which has the least time left
-struct node *find_least_left(struct node *header, int at_limit)
+struct node *findInQ(struct node *header, int at_limit)
 {
 	struct node *temp = NULL;
 	int x = INT_MAX;
 	while (header != NULL)
 	{
-		if (!header->is_terminated)
+		if (!header->EXT)
 		{
-			if (header->arrival_time <= at_limit)
+			if (header->AT <= at_limit)
 			{
-				if (header->how_much_left < x)
+				if (header->LHM < x)
 				{
 					temp = header;
-					x = header->how_much_left;
+					x = header->LHM;
 				}
 			}
 		}
@@ -379,16 +342,16 @@ struct node *find_least_left(struct node *header, int at_limit)
 	return temp;
 }
 
-// Finding the node which has the least priority
-struct node *find_least_priority(struct node *header, int at_limit)
+
+struct node *findPriorInQ(struct node *header, int at_limit)
 {
 	struct node *temp = NULL;
 	int x = INT_MAX;
 	while (header != NULL)
 	{
-		if (!header->is_terminated)
+		if (!header->EXT)
 		{
-			if (header->arrival_time <= at_limit)
+			if (header->AT <= at_limit)
 			{
 				if (header->priority < x)
 				{
@@ -407,29 +370,29 @@ int main(int argc, char *argv[])
 {
     exe = argv[0];
     int options = 0;
-    // Here we check if the correct options are used
+   
 	while ((options = getopt(argc, argv, "f:o:")) != -1)
 	{
 		switch (options)
 		{
 		case 'f':
-			input_filename = optarg;
+			inputFile = optarg;
 			break;
 		case 'o':
-			output_filename = optarg;
+			outFile = optarg;
 			break;
 		default:
-			print_usage();
+			pHelp();
 			break;
 		}
 	}
-    // Here we check if the arguments are passed for options
-	if (input_filename == NULL || output_filename == NULL)
+   
+	if (inputFile == NULL || outFile == NULL)
 	{
-		print_usage();
+		pHelp();
 	}
 
-	FILE *finput = fopen(input_filename, "r");
+	FILE *finput = fopen(inputFile, "r");
 	if (finput == NULL) // Checking if the input file argument exists.
 	{
 		printf("this input file does not exist\n");
@@ -437,7 +400,7 @@ int main(int argc, char *argv[])
 	}
 	fclose(finput);
 
-	write_input_to_LL(input_filename);
+	putInputToList(inputFile);
 
 	menu();
 
@@ -478,7 +441,7 @@ void menu()
 
   }else if(n ==2)
   {
-      menu2();
+      ModeMenu();
   }else if(n == 3)
   {
      showResult();
@@ -493,7 +456,7 @@ void menu()
         menu();
     }
 }
-//Not Preemptive
+
 void notpreemotivemenu()
 {
     system("clear");
@@ -514,13 +477,13 @@ void notpreemotivemenu()
     {
 
         method_char = "SJS";
-		sjf_np();
+		shortNotPre();
           menu();
     }
     else if(n==3)
     {
         method_char = "Priority";
-		ps_np();
+		priorityNotPre();
         menu();
     }
     else
@@ -530,7 +493,7 @@ void notpreemotivemenu()
         notpreemotivemenu();
     }
 }
-// preemtive mode is on
+
 void preemtive()
 {
     system("clear");
@@ -551,26 +514,26 @@ void preemtive()
     else if(n==2)
     {
 
-        method_char = "FCFS";
-		fcfs();
+        method_char = "firstCome";
+		firstCome();
           menu();
     }
     else if(n==3)
     {
         method_char = "SJB";
-		sjf_p();
+		shortPre();
         menu();
     }
     else if(n==4)
     {
         method_char = "Priority";
-		ps_p();
+		priorityPre();
         menu();
     }
     else if(n==5)
     {
-        method_char = "RR";
-		rr();
+        method_char = "RoundR";
+		RoundR();
         menu();
     }else
     {
@@ -579,8 +542,8 @@ void preemtive()
         preemtive();
     }
 }
-//Change mode
-void menu2()
+
+void ModeMenu()
 {
     system("clear");
     int n;
@@ -604,13 +567,13 @@ void menu2()
     {
         mode=true;
          mode_char == "ON";
-         if(method_char == "FCFS" ||method_char == "RR")
+         if(method_char == "firstCome" ||method_char == "RoundR")
         {
             system("clear");
             printf("Preemtive mode is not available for selected Scheduling Method\n");
             printf("Select another shedule method for this mode\n");
             system("sleep 3");
-             menu2();
+             ModeMenu();
         }
         else{
              menu();
@@ -629,11 +592,11 @@ void menu2()
     {
         printf("Please select a valid option\n");
         system("sleep 2");
-        menu2();
+        ModeMenu();
     }
 }
 
-// Time Quantum Asking Menu (Function)
+
 void tq_menu()
 {
 	while (true)
@@ -641,50 +604,50 @@ void tq_menu()
 		system("clear");
 		printf("Please enter the time quantum for Round-Robin Method\n");
 		printf("Time Quantum > ");
-		scanf("%d", &time_quantum);
+		scanf("%d", &TQ);
 		break;
 	}
 }
 
 
-// End Program Menu (Function)
+
 void EndMenu()
 {
-	if (time_quantum == 0)
+	if (TQ == 0)
 		tq_menu();
-	if (fcfs_first)
+	if (firstComeFirst)
 	{
-		fcfs();
+		firstCome();
 	}
-	if (sjf_np_first)
+	if (shortNotPreFirst)
 	{
-		sjf_np();
+		shortNotPre();
 	}
-	if (sjf_p_first)
+	if (shortPreFirst)
 	{
-		sjf_p();
+		shortPre();
 	}
-	if (ps_np_first)
+	if (priorNotPreFirst)
 	{
-		ps_np();
+		priorityNotPre();
 	}
-	if (ps_p_first)
+	if (priorPreFirst)
 	{
-		ps_p();
+		priorityPre();
 	}
-	if (rr_first)
+	if (RoundRFirst)
 	{
-		rr();
+		RoundR();
 	}
 
 	printf("%s", buffer_output);
-	FILE *f = fopen(output_filename, "w");
+	FILE *f = fopen(outFile, "w");
 	fprintf(f, "%s", buffer_output);
 	fclose(f);
 
 	while (header_original != NULL)
 	{
-		header_original = delete_front(header_original);
+		header_original = deleteFront(header_original);
 	}
 
 	exit(0);
@@ -696,11 +659,11 @@ void showResult(){
     {
         menu();
     }else{
-		fcfs();
-		sjf_np();
-		sjf_p();
-		ps_np();
-		ps_p();
+		firstCome();
+		shortNotPre();
+		shortPre();
+		priorityNotPre();
+		priorityPre();
 		printf("Press enter to return to the main menu.\n");
 		getchar();
 		getchar();
@@ -710,49 +673,48 @@ void showResult(){
 	
 
 }
-// First-Come-First-Serve (Function)
-void fcfs()
+void firstCome()
 {
-	struct node *clone_header = clone_LL(header_original);
+	struct node *clone_header = cloneList(header_original);
 	struct node *temp1, *temp2, *t;
 	int program_counter = 0;
 	float average_wait = 0.0f;
-	int number_of_process = process_counter(clone_header);
+	int number_of_process = pCounter(clone_header);
 	bool is_first = true;
 	bubble_sort(&clone_header, number_of_process, "AT");
-	temp1 = clone_LL(clone_header);
+	temp1 = cloneList(clone_header);
 	while (clone_header != NULL)
 	{
-		clone_header = delete_front(clone_header);
+		clone_header = deleteFront(clone_header);
 	}
 	t = temp2 = temp1;
 
 	while (temp1 != NULL)
 	{
-		if (temp1->arrival_time <= program_counter)
+		if (temp1->AT <= program_counter)
 		{
-			program_counter += temp1->burst_time;
-			temp1->turnaround_time = program_counter;
+			program_counter += temp1->BT;
+			temp1->TAT = program_counter;
 			if (is_first)
 			{
-				if ((temp1->waiting_time = temp1->turnaround_time - temp1->burst_time) < 0)
-					temp1->waiting_time = 0;
+				if ((temp1->WT = temp1->TAT - temp1->BT) < 0)
+					temp1->WT = 0;
 				is_first = false;
 			}
 			else
 			{
-				if ((temp1->waiting_time = temp1->turnaround_time - temp1->burst_time - temp1->arrival_time) < 0)
-					temp1->waiting_time = 0;
+				if ((temp1->WT = temp1->TAT - temp1->BT - temp1->AT) < 0)
+					temp1->WT = 0;
 			}
 		}
 
 		else
 		{
-			program_counter = temp1->arrival_time;
-			program_counter += temp1->burst_time;
-			temp1->turnaround_time = program_counter;
-			if ((temp1->waiting_time = temp1->turnaround_time - temp1->burst_time - temp1->arrival_time) < 0)
-				temp1->waiting_time = 0;
+			program_counter = temp1->AT;
+			program_counter += temp1->BT;
+			temp1->TAT = program_counter;
+			if ((temp1->WT = temp1->TAT - temp1->BT - temp1->AT) < 0)
+				temp1->WT = 0;
 		}
 
 		temp1 = temp1->next;
@@ -765,8 +727,8 @@ void fcfs()
 	strcat(buff, "Process Waiting Times:\n");
 	while (temp2 != NULL)
 	{
-		int pid = temp2->process_id;
-		int wait = temp2->waiting_time;
+		int pid = temp2->Id;
+		int wait = temp2->WT;
 		average_wait += wait;
 		char buff_1[20] = "";
 		snprintf(buff_1, 19, "PS%d: %d ms\n", pid, wait);
@@ -777,66 +739,64 @@ void fcfs()
 	char buff_2[40];
 	snprintf(buff_2, 39, "Average Waiting Time: %.3f ms\n\n", average_wait);
 	strcat(buff, buff_2);
-	if (fcfs_first)
+	if (firstComeFirst)
 	{
 		strcat(buffer_output, buff);
-		fcfs_first = false;
+		firstComeFirst = false;
 	}
 	printf("%s", buff);
 
 	while (t != NULL)
 	{
-		t = delete_front(t);
+		t = deleteFront(t);
 	}
 }
 
-// Shortes-Job-First Non-Preemtive (Function)
-void sjf_np()
+
+void shortNotPre()
 {
-	// I have first tried selection sort but could not figure it out...
-	//...(There were complications regarding to non-adjacent nodes)
-	// So I changed the sorting algorithm to bubble sort
-	struct node *clone_header = clone_LL(header_original);
+
+	struct node *clone_header = cloneList(header_original);
 	struct node *temp, *temp1, *t;
 	int program_counter = 0;
 	float average_wait = 0.0f;
-	int number_of_process = process_counter(clone_header);
+	int number_of_process = pCounter(clone_header);
 	bubble_sort(&clone_header, number_of_process, "AT");
 	bubble_sort(&clone_header, number_of_process, "SJF");
-	temp = clone_LL(clone_header);
+	temp = cloneList(clone_header);
 	while (clone_header != NULL)
 	{
-		clone_header = delete_front(clone_header);
+		clone_header = deleteFront(clone_header);
 	}
 	t = temp1 = temp;
 
 	bool is_first = true;
 	while (temp != NULL)
 	{
-		if (temp->arrival_time <= program_counter)
+		if (temp->AT <= program_counter)
 		{
-			program_counter += temp->burst_time;
-			temp->turnaround_time = program_counter;
+			program_counter += temp->BT;
+			temp->TAT = program_counter;
 			if (is_first)
 			{
-				if ((temp->waiting_time = temp->turnaround_time - temp->burst_time) < 0)
-					temp->waiting_time = 0;
+				if ((temp->WT = temp->TAT - temp->BT) < 0)
+					temp->WT = 0;
 				is_first = false;
 			}
 			else
 			{
-				if ((temp->waiting_time = temp->turnaround_time - temp->burst_time - temp->arrival_time) < 0)
-					temp->waiting_time = 0;
+				if ((temp->WT = temp->TAT - temp->BT - temp->AT) < 0)
+					temp->WT = 0;
 			}
 		}
 
 		else
 		{
-			program_counter = temp->arrival_time;
-			program_counter += temp->burst_time;
-			temp->turnaround_time = program_counter;
-			if ((temp->waiting_time = temp->turnaround_time - temp->burst_time - temp->arrival_time) < 0)
-				temp->waiting_time = 0;
+			program_counter = temp->AT;
+			program_counter += temp->BT;
+			temp->TAT = program_counter;
+			if ((temp->WT = temp->TAT - temp->BT - temp->AT) < 0)
+				temp->WT = 0;
 		}
 
 		temp = temp->next;
@@ -849,8 +809,8 @@ void sjf_np()
 	strcat(buff, "Process Waiting Times:\n");
 	while (temp1 != NULL)
 	{
-		int pid = temp1->process_id;
-		int wait = temp1->waiting_time;
+		int pid = temp1->Id;
+		int wait = temp1->WT;
 		average_wait += wait;
 		char buff_1[20] = "";
 		snprintf(buff_1, 19, "PS%d: %d ms\n", pid, wait);
@@ -861,53 +821,53 @@ void sjf_np()
 	char buff_2[40];
 	snprintf(buff_2, 39, "Average Waiting Time: %.3f ms\n\n", average_wait);
 	strcat(buff, buff_2);
-	if (sjf_np_first)
+	if (shortNotPreFirst)
 	{
 		strcat(buffer_output, buff);
-		sjf_np_first = false;
+		shortNotPreFirst = false;
 	}
 	printf("%s", buff);
 
 	while (t != NULL)
 	{
-		t = delete_front(t);
+		t = deleteFront(t);
 	}
 }
 
-// Shortest-Job-First Preemtive (Function)
-void sjf_p()
+
+void shortPre()
 {
-	struct node *clone_header = clone_LL(header_original);
+	struct node *clone_header = cloneList(header_original);
 	struct node *temp, *temp1, *temp2;
 	int program_counter = 0;
 	float average_wait = 0.0f;
-	int number_of_process = process_counter(clone_header);
+	int number_of_process = pCounter(clone_header);
 	bubble_sort(&clone_header, number_of_process, "AT");
 	bubble_sort(&clone_header, number_of_process, "SJF");
 	temp = temp1 = temp2 = clone_header;
 
-	while (!is_all_done(clone_header))
+	while (!isDone(clone_header))
 	{
-		struct node *in_cpu_node = find_least_left(clone_header, program_counter);
+		struct node *in_Q_node = findInQ(clone_header, program_counter);
 		bool is_found = true;
-		if (in_cpu_node == NULL)
+		if (in_Q_node == NULL)
 		{
 			temp = clone_header;
 			while (temp != NULL)
 			{
-				if (!temp->is_terminated)
+				if (!temp->EXT)
 				{
-					if (temp->arrival_time > program_counter && is_found)
+					if (temp->AT > program_counter && is_found)
 					{
 						is_found = false;
-						program_counter = temp->arrival_time;
-						in_cpu_node = find_least_left(clone_header, program_counter);
-						in_cpu_node->how_much_left--;
+						program_counter = temp->AT;
+						in_Q_node = findInQ(clone_header, program_counter);
+						in_Q_node->LHM--;
 						program_counter++;
-						if (in_cpu_node->how_much_left == 0)
+						if (in_Q_node->LHM == 0)
 						{
-							in_cpu_node->turnaround_time = program_counter;
-							in_cpu_node->is_terminated = true;
+							in_Q_node->TAT = program_counter;
+							in_Q_node->EXT = true;
 						}
 					}
 				}
@@ -918,12 +878,12 @@ void sjf_p()
 		else
 		{
 			program_counter++;
-			in_cpu_node->how_much_left--;
+			in_Q_node->LHM--;
 
-			if (in_cpu_node->how_much_left == 0)
+			if (in_Q_node->LHM == 0)
 			{
-				in_cpu_node->turnaround_time = program_counter;
-				in_cpu_node->is_terminated = true;
+				in_Q_node->TAT = program_counter;
+				in_Q_node->EXT = true;
 			}
 		}
 	}
@@ -933,18 +893,18 @@ void sjf_p()
 	{
 		if (is_first)
 		{
-			temp1->waiting_time = temp1->turnaround_time - temp1->burst_time;
-			if (temp1->waiting_time < 0)
-				temp1->waiting_time = 0;
+			temp1->WT = temp1->TAT - temp1->BT;
+			if (temp1->WT < 0)
+				temp1->WT = 0;
 
 			is_first = false;
 		}
 
 		else
 		{
-			temp1->waiting_time = temp1->turnaround_time - temp1->burst_time - temp1->arrival_time;
-			if (temp1->waiting_time < 0)
-				temp1->waiting_time = 0;
+			temp1->WT = temp1->TAT - temp1->BT - temp1->AT;
+			if (temp1->WT < 0)
+				temp1->WT = 0;
 		}
 
 		temp1 = temp1->next;
@@ -957,8 +917,8 @@ void sjf_p()
 	strcat(buff, "Process Waiting Times:\n");
 	while (temp2 != NULL)
 	{
-		int pid = temp2->process_id;
-		int wait = temp2->waiting_time;
+		int pid = temp2->Id;
+		int wait = temp2->WT;
 		average_wait += wait;
 		char buff_1[20] = "";
 		snprintf(buff_1, 19, "PS%d: %d ms\n", pid, wait);
@@ -969,63 +929,63 @@ void sjf_p()
 	char buff_2[40];
 	snprintf(buff_2, 39, "Average Waiting Time: %.3f ms\n\n", average_wait);
 	strcat(buff, buff_2);
-	if (sjf_p_first)
+	if (shortPreFirst)
 	{
 		strcat(buffer_output, buff);
-		sjf_p_first = false;
+		shortPreFirst = false;
 	}
 	printf("%s", buff);
 
 	while (clone_header != NULL)
 	{
-		clone_header = delete_front(clone_header);
+		clone_header = deleteFront(clone_header);
 	}
 }
 
-// Priority Scheduling Non-Preemtive (Function)
-void ps_np()
+
+void priorityNotPre()
 {
-	struct node *clone_header = clone_LL(header_original);
+	struct node *clone_header = cloneList(header_original);
 	struct node *temp, *temp1, *t;
 	int program_counter = 0;
 	float average_wait = 0.0f;
-	int number_of_process = process_counter(clone_header);
+	int number_of_process = pCounter(clone_header);
 	bubble_sort(&clone_header, number_of_process, "AT");
 	bubble_sort(&clone_header, number_of_process, "PS");
-	temp = clone_LL(clone_header);
+	temp = cloneList(clone_header);
 	while (clone_header != NULL)
 	{
-		clone_header = delete_front(clone_header);
+		clone_header = deleteFront(clone_header);
 	}
 	t = temp1 = temp;
 
 	bool is_first = true;
 	while (temp != NULL)
 	{
-		if (temp->arrival_time <= program_counter)
+		if (temp->AT <= program_counter)
 		{
-			program_counter += temp->burst_time;
-			temp->turnaround_time = program_counter;
+			program_counter += temp->BT;
+			temp->TAT = program_counter;
 			if (is_first)
 			{
-				if ((temp->waiting_time = temp->turnaround_time - temp->burst_time) < 0)
-					temp->waiting_time = 0;
+				if ((temp->WT = temp->TAT - temp->BT) < 0)
+					temp->WT = 0;
 				is_first = false;
 			}
 			else
 			{
-				if ((temp->waiting_time = temp->turnaround_time - temp->burst_time - temp->arrival_time) < 0)
-					temp->waiting_time = 0;
+				if ((temp->WT = temp->TAT - temp->BT - temp->AT) < 0)
+					temp->WT = 0;
 			}
 		}
 
 		else
 		{
-			program_counter = temp->arrival_time;
-			program_counter += temp->burst_time;
-			temp->turnaround_time = program_counter;
-			if ((temp->waiting_time = temp->turnaround_time - temp->burst_time - temp->arrival_time) < 0)
-				temp->waiting_time = 0;
+			program_counter = temp->AT;
+			program_counter += temp->BT;
+			temp->TAT = program_counter;
+			if ((temp->WT = temp->TAT - temp->BT - temp->AT) < 0)
+				temp->WT = 0;
 		}
 
 		temp = temp->next;
@@ -1038,8 +998,8 @@ void ps_np()
 	strcat(buff, "Process Waiting Times:\n");
 	while (temp1 != NULL)
 	{
-		int pid = temp1->process_id;
-		int wait = temp1->waiting_time;
+		int pid = temp1->Id;
+		int wait = temp1->WT;
 		average_wait += wait;
 		char buff_1[20] = "";
 		snprintf(buff_1, 19, "PS%d: %d ms\n", pid, wait);
@@ -1050,54 +1010,54 @@ void ps_np()
 	char buff_2[40];
 	snprintf(buff_2, 39, "Average Waiting Time: %.3f ms\n\n", average_wait);
 	strcat(buff, buff_2);
-	if (ps_np_first)
+	if (priorNotPreFirst)
 	{
 		strcat(buffer_output, buff);
-		ps_np_first = false;
+		priorNotPreFirst = false;
 	}
 	printf("%s", buff);
 
 	while (t != NULL)
 	{
-		t = delete_front(t);
+		t = deleteFront(t);
 	}
 }
 
-// Priority Scheduling Preemtive (Function)
-void ps_p()
+
+void priorityPre()
 {
-	struct node *clone_header = clone_LL(header_original);
+	struct node *clone_header = cloneList(header_original);
 	struct node *temp, *temp1, *temp2;
 	int program_counter = 0;
 	float average_wait = 0.0f;
-	int number_of_process = process_counter(clone_header);
+	int number_of_process = pCounter(clone_header);
 	bubble_sort(&clone_header, number_of_process, "AT");
 	bubble_sort(&clone_header, number_of_process, "PS");
 	temp = temp1 = temp2 = clone_header;
 
-	while (!is_all_done(clone_header))
+	while (!isDone(clone_header))
 	{
-		struct node *in_cpu_node = find_least_priority(clone_header, program_counter);
+		struct node *in_Q_node = findPriorInQ(clone_header, program_counter);
 		bool is_found = true;
 
-		if (in_cpu_node == NULL)
+		if (in_Q_node == NULL)
 		{
 			temp = clone_header;
 			while (temp != NULL)
 			{
-				if (!temp->is_terminated)
+				if (!temp->EXT)
 				{
-					if (temp->arrival_time > program_counter && is_found)
+					if (temp->AT > program_counter && is_found)
 					{
 						is_found = false;
-						program_counter = temp->arrival_time;
-						in_cpu_node = find_least_priority(clone_header, program_counter);
-						in_cpu_node->how_much_left--;
+						program_counter = temp->AT;
+						in_Q_node = findPriorInQ(clone_header, program_counter);
+						in_Q_node->LHM--;
 						program_counter++;
-						if (in_cpu_node->how_much_left == 0)
+						if (in_Q_node->LHM == 0)
 						{
-							in_cpu_node->turnaround_time = program_counter;
-							in_cpu_node->is_terminated = true;
+							in_Q_node->TAT = program_counter;
+							in_Q_node->EXT = true;
 						}
 					}
 				}
@@ -1109,12 +1069,12 @@ void ps_p()
 		else
 		{
 			program_counter++;
-			in_cpu_node->how_much_left--;
+			in_Q_node->LHM--;
 
-			if (in_cpu_node->how_much_left == 0)
+			if (in_Q_node->LHM == 0)
 			{
-				in_cpu_node->turnaround_time = program_counter;
-				in_cpu_node->is_terminated = true;
+				in_Q_node->TAT = program_counter;
+				in_Q_node->EXT = true;
 			}
 		}
 	}
@@ -1124,18 +1084,18 @@ void ps_p()
 	{
 		if (is_first)
 		{
-			temp1->waiting_time = temp1->turnaround_time - temp1->burst_time;
-			if (temp1->waiting_time < 0)
-				temp1->waiting_time = 0;
+			temp1->WT = temp1->TAT - temp1->BT;
+			if (temp1->WT < 0)
+				temp1->WT = 0;
 
 			is_first = false;
 		}
 
 		else
 		{
-			temp1->waiting_time = temp1->turnaround_time - temp1->burst_time - temp1->arrival_time;
-			if (temp1->waiting_time < 0)
-				temp1->waiting_time = 0;
+			temp1->WT = temp1->TAT - temp1->BT - temp1->AT;
+			if (temp1->WT < 0)
+				temp1->WT = 0;
 		}
 		temp1 = temp1->next;
 	}
@@ -1147,8 +1107,8 @@ void ps_p()
 	strcat(buff, "Process Waiting Times:\n");
 	while (temp2 != NULL)
 	{
-		int pid = temp2->process_id;
-		int wait = temp2->waiting_time;
+		int pid = temp2->Id;
+		int wait = temp2->WT;
 		average_wait += wait;
 		char buff_1[20] = "";
 		snprintf(buff_1, 19, "PS%d: %d ms\n", pid, wait);
@@ -1159,26 +1119,26 @@ void ps_p()
 	char buff_2[40];
 	snprintf(buff_2, 39, "Average Waiting Time: %.3f ms\n\n", average_wait);
 	strcat(buff, buff_2);
-	if (ps_p_first)
+	if (priorPreFirst)
 	{
 		strcat(buffer_output, buff);
-		ps_p_first = false;
+		priorPreFirst = false;
 	}
 	printf("%s", buff);
 	while (clone_header != NULL)
 	{
-		clone_header = delete_front(clone_header);
+		clone_header = deleteFront(clone_header);
 	}
 }
 
-// Round-Robin Scheduling (Function)
-void rr()
+
+void RoundR()
 {
-	struct node *clone_header = clone_LL(header_original);
+	struct node *clone_header = cloneList(header_original);
 	struct node *temp1, *temp2, *temp3;
 	int program_counter = 0;
 	float average_wait = 0.0f;
-	int number_of_process = process_counter(clone_header);
+	int number_of_process = pCounter(clone_header);
 	bool is_first = true;
 	bool previous_ones_done = false;
 	bubble_sort(&clone_header, number_of_process, "AT");
@@ -1186,84 +1146,84 @@ void rr()
 
 	while (temp3 != NULL)
 	{
-		temp3->time_slices = temp3->burst_time / time_quantum;
-		temp3->last_slice_burst = temp3->burst_time % time_quantum;
+		temp3->ST = temp3->BT / TQ;
+		temp3->BLS = temp3->BT % TQ;
 		temp3 = temp3->next;
 	}
 
-	while (!is_all_done(clone_header))
+	while (!isDone(clone_header))
 	{
 		temp1 = clone_header;
 		is_first = true;
 		while (temp1 != NULL)
 		{
-			if (!temp1->is_terminated)
+			if (!temp1->EXT)
 			{
-				if (temp1->arrival_time <= program_counter)
+				if (temp1->AT <= program_counter)
 				{
 					if (is_first)
 					{
-						if (temp1->time_slices == 0)
+						if (temp1->ST == 0)
 						{
-							program_counter += temp1->last_slice_burst;
-							if (temp1->last_slice_burst != 0)
-								temp1->turnaround_time = program_counter;
-							temp1->waiting_time = temp1->turnaround_time - temp1->burst_time;
-							if (temp1->waiting_time < 0)
-								temp1->waiting_time = 0;
-							temp1->is_terminated = true;
+							program_counter += temp1->BLS;
+							if (temp1->BLS != 0)
+								temp1->TAT = program_counter;
+							temp1->WT = temp1->TAT - temp1->BT;
+							if (temp1->WT < 0)
+								temp1->WT = 0;
+							temp1->EXT = true;
 						}
 						else
 						{
-							program_counter += time_quantum;
-							temp1->turnaround_time = program_counter;
-							temp1->time_slices--;
+							program_counter += TQ;
+							temp1->TAT = program_counter;
+							temp1->ST--;
 						}
 						is_first = false;
 					}
 
 					else
 					{
-						if (temp1->time_slices == 0)
+						if (temp1->ST == 0)
 						{
-							program_counter += temp1->last_slice_burst;
-							if (temp1->last_slice_burst != 0)
-								temp1->turnaround_time = program_counter;
-							temp1->waiting_time = temp1->turnaround_time - temp1->burst_time - temp1->arrival_time;
-							if (temp1->waiting_time < 0)
-								temp1->waiting_time = 0;
-							temp1->is_terminated = true;
+							program_counter += temp1->BLS;
+							if (temp1->BLS != 0)
+								temp1->TAT = program_counter;
+							temp1->WT = temp1->TAT - temp1->BT - temp1->AT;
+							if (temp1->WT < 0)
+								temp1->WT = 0;
+							temp1->EXT = true;
 						}
 						else
 						{
-							program_counter += time_quantum;
-							temp1->turnaround_time = program_counter;
-							temp1->time_slices--;
+							program_counter += TQ;
+							temp1->TAT = program_counter;
+							temp1->ST--;
 						}
 					}
 				}
 
 				else
 				{
-					previous_ones_done = is_previous_ones_done(clone_header, program_counter);
+					previous_ones_done = isPrevDone(clone_header, program_counter);
 					if (previous_ones_done)
 					{
-						program_counter = temp1->arrival_time;
-						if (temp1->time_slices == 0)
+						program_counter = temp1->AT;
+						if (temp1->ST == 0)
 						{
-							program_counter += temp1->last_slice_burst;
-							if (temp1->last_slice_burst != 0)
-								temp1->turnaround_time = program_counter;
-							temp1->waiting_time = temp1->turnaround_time - temp1->burst_time - temp1->arrival_time;
-							if (temp1->waiting_time < 0)
-								temp1->waiting_time = 0;
-							temp1->is_terminated = true;
+							program_counter += temp1->BLS;
+							if (temp1->BLS != 0)
+								temp1->TAT = program_counter;
+							temp1->WT = temp1->TAT - temp1->BT - temp1->AT;
+							if (temp1->WT < 0)
+								temp1->WT = 0;
+							temp1->EXT = true;
 						}
 						else
 						{
-							program_counter += time_quantum;
-							temp1->turnaround_time = program_counter;
-							temp1->time_slices--;
+							program_counter += TQ;
+							temp1->TAT = program_counter;
+							temp1->ST--;
 						}
 					}
 				}
@@ -1278,12 +1238,12 @@ void rr()
 	bubble_sort(&clone_header, number_of_process, "PID");
 	temp2 = clone_header;
 	system("clear");
-	snprintf(buff, 999, "Scheduling Method: Round-Robin (Time quantum: %d)\n", time_quantum);
+	snprintf(buff, 999, "Scheduling Method: Round-Robin (Time quantum: %d)\n", TQ);
 	strcat(buff, "Process Waiting Times:\n");
 	while (temp2 != NULL)
 	{
-		int pid = temp2->process_id;
-		int wait = temp2->waiting_time;
+		int pid = temp2->Id;
+		int wait = temp2->WT;
 		average_wait += wait;
 		char buff_1[20];
 		snprintf(buff_1, 19, "PS%d: %d ms\n", pid, wait);
@@ -1294,14 +1254,14 @@ void rr()
 	char buff_2[40];
 	snprintf(buff_2, 39, "Average Waiting Time: %.3f ms\n\n", average_wait);
 	strcat(buff, buff_2);
-	if (rr_first)
+	if (RoundRFirst)
 	{
 		strcat(buffer_output, buff);
-		rr_first = false;
+		RoundRFirst = false;
 	}
 	printf("%s", buff);
 	while (clone_header != NULL)
 	{
-		clone_header = delete_front(clone_header);
+		clone_header = deleteFront(clone_header);
 	}
 }
