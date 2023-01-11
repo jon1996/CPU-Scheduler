@@ -42,6 +42,7 @@ bool ps_np_first = true;
 bool ps_p_first = true;
 bool rr_first = true;
 int time_quantum;
+char c;
 
 struct node *header_original = NULL;
 struct node *create_node(int pid, int burst_time, int arrival_time, int priority)
@@ -467,7 +468,7 @@ void menu()
   {
       if(mode==false)
       {
-           menu4();
+           preemtive();
       }
       else if(mode==true)
       {
@@ -480,10 +481,10 @@ void menu()
       menu2();
   }else if(n == 3)
   {
-      printf("Show Result");
+     showResult();
   }else if(n == 4)
   {
-      menu5();
+      EndMenu();
   }
   else
     {
@@ -530,7 +531,7 @@ void notpreemotivemenu()
     }
 }
 // preemtive mode is on
-void menu4()
+void preemtive()
 {
     system("clear");
     int n;
@@ -540,7 +541,7 @@ void menu4()
 		printf("4-) Priority Scheduling\n");
 		printf("5-) Round-Robin Scheduling\n");
 		printf("Option > ");
-    scanf("%1d", &n);
+    scanf("%d", &n);
     if(n==1)
     {
 
@@ -575,7 +576,7 @@ void menu4()
     {
         printf("Please select a valid option\n");
         system("sleep 2");
-        menu4();
+        preemtive();
     }
 }
 //Change mode
@@ -647,7 +648,7 @@ void tq_menu()
 
 
 // End Program Menu (Function)
-void menu5()
+void EndMenu()
 {
 	if (time_quantum == 0)
 		tq_menu();
@@ -689,6 +690,26 @@ void menu5()
 	exit(0);
 }
 
+
+void showResult(){
+	if(method_char == "None")
+    {
+        menu();
+    }else{
+		fcfs();
+		sjf_np();
+		sjf_p();
+		ps_np();
+		ps_p();
+		printf("Press enter to return to the main menu.\n");
+		getchar();
+		getchar();
+		menu();
+	}
+	
+	
+
+}
 // First-Come-First-Serve (Function)
 void fcfs()
 {
