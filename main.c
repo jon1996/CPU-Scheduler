@@ -50,6 +50,14 @@ void notpreemotivemenu();
 void ModeMenu();
 void EndMenu();
 void showResult();
+void tq_menu();
+void firstCome();
+void shortNotPre();
+void shortPre();
+void RoundR();
+void priorityNotPre();
+void priorityPre();
+
 
 struct node *header_original = NULL;
 struct node *createNode(int pid, int BT, int AT, int priority)
@@ -417,7 +425,7 @@ int main(int argc, char *argv[])
 void menu()
 {
   system("clear");
-   int n;
+	int n;
   printf("\t\t CPU schedule Simulator\t\n");
   printf("1) Scheduling Method(%s)\n",method_char);
   if(mode==false)
@@ -438,7 +446,7 @@ void menu()
   {
       if(mode==false)
       {
-           preemtive();
+           preemptive();
       }
       else if(mode==true)
       {
@@ -501,7 +509,7 @@ void notpreemotivemenu()
     }
 }
 
-void preemtive()
+void preemptive()
 {
     system("clear");
     int n;
@@ -546,7 +554,7 @@ void preemtive()
     {
         printf("Please select a valid option\n");
         system("sleep 2");
-        preemtive();
+        preemptive();
     }
 }
 
@@ -577,7 +585,7 @@ void ModeMenu()
          if(method_char == "firstCome" ||method_char == "RoundR")
         {
             system("clear");
-            printf("Preemtive mode is not available for selected Scheduling Method\n");
+            printf("preemptive mode is not available for selected Scheduling Method\n");
             printf("Select another shedule method for this mode\n");
             system("sleep 3");
              ModeMenu();
@@ -808,7 +816,7 @@ void shortNotPre()
 	strcpy(buff, "");
 	bubble_sort(&temp1, number_of_process, "PID");
 	system("clear");
-	strcat(buff, "Scheduling Method: Shortest Job First (Non-Preemtive)\n");
+	strcat(buff, "Scheduling Method: Shortest Job First (Non-preemptive)\n");
 	strcat(buff, "Process Waiting Times:\n");
 	while (temp1 != NULL)
 	{
@@ -915,7 +923,7 @@ void shortPre()
 	strcpy(buff, "");
 	bubble_sort(&temp2, number_of_process, "PID");
 	system("clear");
-	strcat(buff, "Scheduling Method: Shortest Job First Scheduling (Preemtive)\n");
+	strcat(buff, "Scheduling Method: Shortest Job First Scheduling (preemptive)\n");
 	strcat(buff, "Process Waiting Times:\n");
 	while (temp2 != NULL)
 	{
@@ -1130,7 +1138,7 @@ void priorityNotPre()
 	strcpy(buff, "");
 	bubble_sort(&temp1, number_of_process, "PID");
 	system("clear");
-	strcat(buff, "Scheduling Method: Priority Scheduling (Non-Preemtive)\n");
+	strcat(buff, "Scheduling Method: Priority Scheduling (Non-preemptive)\n");
 	strcat(buff, "Process Waiting Times:\n");
 	while (temp1 != NULL)
 	{
@@ -1239,7 +1247,7 @@ void priorityPre()
 	strcpy(buff, "");
 	bubble_sort(&temp2, number_of_process, "PID");
 	system("clear");
-	strcat(buff, "Scheduling Method: Priority Scheduling (Preemtive)\n");
+	strcat(buff, "Scheduling Method: Priority Scheduling (preemptive)\n");
 	strcat(buff, "Process Waiting Times:\n");
 	while (temp2 != NULL)
 	{
