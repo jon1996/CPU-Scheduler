@@ -183,12 +183,12 @@ int pCounter(struct node *header)
 	return counter;
 }
 
-struct node *swapNode(struct node *tmp, struct node *tmp2)
+struct node *swapNode(struct node *temp1, struct node *temp2)
 {
-	struct node *tmp = tmp2->next;
-	tmp2->next = tmp;
-	tmp->next = tmp;
-	return tmp2;
+	struct node *tmp = temp2->next;
+	temp2->next = temp1;
+	temp1->next = tmp;
+	return temp2;
 }
 
 void bubble_sort(struct node **header, int counter, char *sort_mode)
@@ -205,14 +205,14 @@ void bubble_sort(struct node **header, int counter, char *sort_mode)
 
 		for (j = 0; j < counter - 1 - i; j++)
 		{
-			struct node *tmp = *header_temp;
-			struct node *tmp2 = tmp->next;
+			struct node *temp1 = *header_temp;
+			struct node *temp2 = temp1->next;
 
 			if (!strcmp(sort_mode, "PID"))
 			{
-				if (tmp->Id >= tmp2->Id)
+				if (temp1->Id >= temp2->Id)
 				{
-					*header_temp = swapNode(tmp, tmp2);
+					*header_temp = swapNode(temp1, temp2);
 					swapped = 1;
 				}
 				header_temp = &(*header_temp)->next; // Setting the header_temp's addres to the address of next node which is in the header_temp's address
@@ -220,17 +220,17 @@ void bubble_sort(struct node **header, int counter, char *sort_mode)
 
 			else if (!strcmp(sort_mode, "AT"))
 			{
-				if (tmp->AT > tmp2->AT)
+				if (temp1->AT > temp2->AT)
 				{
-					*header_temp = swapNode(tmp, tmp2);
+					*header_temp = swapNode(temp1, temp2);
 					swapped = 1;
 				}
 
-				else if (tmp->AT == tmp2->AT)
+				else if (temp1->AT == temp2->AT)
 				{
-					if (tmp->Id > tmp2->Id)
+					if (temp1->Id > temp2->Id)
 					{
-						*header_temp = swapNode(tmp, tmp2);
+						*header_temp = swapNode(temp1, temp2);
 						swapped = 1;
 					}
 				}
@@ -239,19 +239,19 @@ void bubble_sort(struct node **header, int counter, char *sort_mode)
 
 			else if (!strcmp(sort_mode, "SJF"))
 			{
-				if (tmp->AT <= max_at && tmp2->AT <= max_at)
+				if (temp1->AT <= max_at && temp2->AT <= max_at)
 				{
-					if (tmp->BT > tmp2->BT)
+					if (temp1->BT > temp2->BT)
 					{
-						*header_temp = swapNode(tmp, tmp2);
+						*header_temp = swapNode(temp1, temp2);
 						swapped = 1;
 					}
 
-					else if (tmp->BT == tmp2->BT)
+					else if (temp1->BT == temp2->BT)
 					{
-						if (tmp->Id > tmp2->Id)
+						if (temp1->Id > temp2->Id)
 						{
-							*header_temp = swapNode(tmp, tmp2);
+							*header_temp = swapNode(temp1, temp2);
 							swapped = 1;
 						}
 					}
@@ -259,8 +259,8 @@ void bubble_sort(struct node **header, int counter, char *sort_mode)
 				}
 				else
 				{
-					if (tmp2->AT > max_at)
-						max_at = tmp2->AT;
+					if (temp2->AT > max_at)
+						max_at = temp2->AT;
 				}
 
 				header_temp = &(*header_temp)->next;
@@ -268,19 +268,19 @@ void bubble_sort(struct node **header, int counter, char *sort_mode)
 
 			else if (!strcmp(sort_mode, "PS"))
 			{
-				if (tmp->AT <= max_at && tmp2->AT <= max_at)
+				if (temp1->AT <= max_at && temp2->AT <= max_at)
 				{
-					if (tmp->priority > tmp2->priority)
+					if (temp1->priority > temp2->priority)
 					{
-						*header_temp = swapNode(tmp, tmp2);
+						*header_temp = swapNode(temp1, temp2);
 						swapped = 1;
 					}
 
-					else if (tmp->priority == tmp2->priority)
+					else if (temp1->priority == temp2->priority)
 					{
-						if (tmp->Id > tmp2->Id)
+						if (temp1->Id > temp2->Id)
 						{
-							*header_temp = swapNode(tmp, tmp2);
+							*header_temp = swapNode(temp1, temp2);
 							swapped = 1;
 						}
 					}
@@ -288,8 +288,8 @@ void bubble_sort(struct node **header, int counter, char *sort_mode)
 				}
 				else
 				{
-					if (tmp2->AT > max_at)
-						max_at = tmp2->AT;
+					if (temp2->AT > max_at)
+						max_at = temp2->AT;
 				}
 
 				header_temp = &(*header_temp)->next;
@@ -688,68 +688,68 @@ void showResult(){
 void firstCome()
 {
 	struct node *clone_header = cloneList(header_original);
-	struct node *tmp, *tmp2, *t;
+	struct node *temp1, *temp2, *t;
 	int program_counter = 0;
-	float AWT = 0.0f;
+	float average_wait = 0.0f;
 	int number_of_process = pCounter(clone_header);
 	bool is_first = true;
 	bubble_sort(&clone_header, number_of_process, "AT");
-	tmp = cloneList(clone_header);
+	temp1 = cloneList(clone_header);
 	while (clone_header != NULL)
 	{
 		clone_header = deleteFront(clone_header);
 	}
-	t = tmp2 = tmp;
+	t = temp2 = temp1;
 
-	while (tmp != NULL)
+	while (temp1 != NULL)
 	{
-		if (tmp->AT <= program_counter)
+		if (temp1->AT <= program_counter)
 		{
-			program_counter += tmp->BT;
-			tmp->TAT = program_counter;
+			program_counter += temp1->BT;
+			temp1->TAT = program_counter;
 			if (is_first)
 			{
-				if ((tmp->WT = tmp->TAT - tmp->BT) < 0)
-					tmp->WT = 0;
+				if ((temp1->WT = temp1->TAT - temp1->BT) < 0)
+					temp1->WT = 0;
 				is_first = false;
 			}
 			else
 			{
-				if ((tmp->WT = tmp->TAT - tmp->BT - tmp->AT) < 0)
-					tmp->WT = 0;
+				if ((temp1->WT = temp1->TAT - temp1->BT - temp1->AT) < 0)
+					temp1->WT = 0;
 			}
 		}
 
 		else
 		{
-			program_counter = tmp->AT;
-			program_counter += tmp->BT;
-			tmp->TAT = program_counter;
-			if ((tmp->WT = tmp->TAT - tmp->BT - tmp->AT) < 0)
-				tmp->WT = 0;
+			program_counter = temp1->AT;
+			program_counter += temp1->BT;
+			temp1->TAT = program_counter;
+			if ((temp1->WT = temp1->TAT - temp1->BT - temp1->AT) < 0)
+				temp1->WT = 0;
 		}
 
-		tmp = tmp->next;
+		temp1 = temp1->next;
 	}
 
 	strcpy(buff, "");
-	bubble_sort(&tmp2, number_of_process, "PID");
+	bubble_sort(&temp2, number_of_process, "PID");
 	system("clear");
 	strcat(buff, "Scheduling Method: First Come First Served\n");
 	strcat(buff, "Process\n");
-	while (tmp2 != NULL)
+	while (temp2 != NULL)
 	{
-		int pid = tmp2->Id;
-		int wait = tmp2->WT;
-		AWT += wait;
+		int pid = temp2->Id;
+		int wait = temp2->WT;
+		average_wait += wait;
 		char buff_1[20] = "";
 		snprintf(buff_1, 19, "PS%d: %d ms\n", pid, wait);
 		strcat(buff, buff_1);
-		tmp2 = tmp2->next;
+		temp2 = temp2->next;
 	}
-	AWT /= number_of_process;
+	average_wait /= number_of_process;
 	char buff_2[40];
-	snprintf(buff_2, 39, "Average Waiting Time: %.3f ms\n\n", AWT);
+	snprintf(buff_2, 39, "Average Waiting Time: %.3f ms\n\n", average_wait);
 	strcat(buff, buff_2);
 	if (firstComeFirst)
 	{
@@ -768,9 +768,9 @@ void shortNotPre()
 {
 
 	struct node *clone_header = cloneList(header_original);
-	struct node *temp, *tmp, *t;
+	struct node *temp, *temp1, *t;
 	int program_counter = 0;
-	float AWT = 0.0f;
+	float average_wait = 0.0f;
 	int number_of_process = pCounter(clone_header);
 	bubble_sort(&clone_header, number_of_process, "AT");
 	bubble_sort(&clone_header, number_of_process, "SJF");
@@ -779,7 +779,7 @@ void shortNotPre()
 	{
 		clone_header = deleteFront(clone_header);
 	}
-	t = tmp = temp;
+	t = temp1 = temp;
 
 	bool is_first = true;
 	while (temp != NULL)
@@ -814,23 +814,23 @@ void shortNotPre()
 	}
 
 	strcpy(buff, "");
-	bubble_sort(&tmp, number_of_process, "PID");
+	bubble_sort(&temp1, number_of_process, "PID");
 	system("clear");
 	strcat(buff, "Scheduling Method: Shortest Job First (Non-preemptive)\n");
 	strcat(buff, "Process\n");
-	while (tmp != NULL)
+	while (temp1 != NULL)
 	{
-		int pid = tmp->Id;
-		int wait = tmp->WT;
-		AWT += wait;
+		int pid = temp1->Id;
+		int wait = temp1->WT;
+		average_wait += wait;
 		char buff_1[20] = "";
 		snprintf(buff_1, 19, "PS%d: %d ms\n", pid, wait);
 		strcat(buff, buff_1);
-		tmp = tmp->next;
+		temp1 = temp1->next;
 	}
-	AWT /= number_of_process;
+	average_wait /= number_of_process;
 	char buff_2[40];
-	snprintf(buff_2, 39, "Average Waiting Time: %.3f ms\n\n", AWT);
+	snprintf(buff_2, 39, "Average Waiting Time: %.3f ms\n\n", average_wait);
 	strcat(buff, buff_2);
 	if (shortNotPreFirst)
 	{
@@ -848,13 +848,13 @@ void shortNotPre()
 void shortPre()
 {
 	struct node *clone_header = cloneList(header_original);
-	struct node *temp, *tmp, *tmp2;
+	struct node *temp, *temp1, *temp2;
 	int program_counter = 0;
-	float AWT = 0.0f;
+	float average_wait = 0.0f;
 	int number_of_process = pCounter(clone_header);
 	bubble_sort(&clone_header, number_of_process, "AT");
 	bubble_sort(&clone_header, number_of_process, "SJF");
-	temp = tmp = tmp2 = clone_header;
+	temp = temp1 = temp2 = clone_header;
 
 	while (!isDone(clone_header))
 	{
@@ -899,45 +899,45 @@ void shortPre()
 	}
 
 	bool is_first = true;
-	while (tmp != NULL)
+	while (temp1 != NULL)
 	{
 		if (is_first)
 		{
-			tmp->WT = tmp->TAT - tmp->BT;
-			if (tmp->WT < 0)
-				tmp->WT = 0;
+			temp1->WT = temp1->TAT - temp1->BT;
+			if (temp1->WT < 0)
+				temp1->WT = 0;
 
 			is_first = false;
 		}
 
 		else
 		{
-			tmp->WT = tmp->TAT - tmp->BT - tmp->AT;
-			if (tmp->WT < 0)
-				tmp->WT = 0;
+			temp1->WT = temp1->TAT - temp1->BT - temp1->AT;
+			if (temp1->WT < 0)
+				temp1->WT = 0;
 		}
 
-		tmp = tmp->next;
+		temp1 = temp1->next;
 	}
 
 	strcpy(buff, "");
-	bubble_sort(&tmp2, number_of_process, "PID");
+	bubble_sort(&temp2, number_of_process, "PID");
 	system("clear");
 	strcat(buff, "Scheduling Method: Shortest Job First Scheduling (preemptive)\n");
 	strcat(buff, "Process\n");
-	while (tmp2 != NULL)
+	while (temp2 != NULL)
 	{
-		int pid = tmp2->Id;
-		int wait = tmp2->WT;
-		AWT += wait;
+		int pid = temp2->Id;
+		int wait = temp2->WT;
+		average_wait += wait;
 		char buff_1[20] = "";
 		snprintf(buff_1, 19, "PS%d: %d ms\n", pid, wait);
 		strcat(buff, buff_1);
-		tmp2 = tmp2->next;
+		temp2 = temp2->next;
 	}
-	AWT /= number_of_process;
+	average_wait /= number_of_process;
 	char buff_2[40];
-	snprintf(buff_2, 39, "Average Waiting Time: %.3f ms\n\n", AWT);
+	snprintf(buff_2, 39, "Average Waiting Time: %.3f ms\n\n", average_wait);
 	strcat(buff, buff_2);
 	if (shortPreFirst)
 	{
@@ -956,14 +956,14 @@ void shortPre()
 void RoundR()
 {
 	struct node *clone_header = cloneList(header_original);
-	struct node *tmp, *tmp2, *temp3;
+	struct node *temp1, *temp2, *temp3;
 	int program_counter = 0;
-	float AWT = 0.0f;
+	float average_wait = 0.0f;
 	int number_of_process = pCounter(clone_header);
 	bool is_first = true;
 	bool previous_ones_done = false;
 	bubble_sort(&clone_header, number_of_process, "AT");
-	tmp = tmp2 = temp3 = clone_header;
+	temp1 = temp2 = temp3 = clone_header;
 
 	while (temp3 != NULL)
 	{
@@ -974,52 +974,52 @@ void RoundR()
 
 	while (!isDone(clone_header))
 	{
-		tmp = clone_header;
+		temp1 = clone_header;
 		is_first = true;
-		while (tmp != NULL)
+		while (temp1 != NULL)
 		{
-			if (!tmp->EXT)
+			if (!temp1->EXT)
 			{
-				if (tmp->AT <= program_counter)
+				if (temp1->AT <= program_counter)
 				{
 					if (is_first)
 					{
-						if (tmp->ST == 0)
+						if (temp1->ST == 0)
 						{
-							program_counter += tmp->BLS;
-							if (tmp->BLS != 0)
-								tmp->TAT = program_counter;
-							tmp->WT = tmp->TAT - tmp->BT;
-							if (tmp->WT < 0)
-								tmp->WT = 0;
-							tmp->EXT = true;
+							program_counter += temp1->BLS;
+							if (temp1->BLS != 0)
+								temp1->TAT = program_counter;
+							temp1->WT = temp1->TAT - temp1->BT;
+							if (temp1->WT < 0)
+								temp1->WT = 0;
+							temp1->EXT = true;
 						}
 						else
 						{
 							program_counter += TQ;
-							tmp->TAT = program_counter;
-							tmp->ST--;
+							temp1->TAT = program_counter;
+							temp1->ST--;
 						}
 						is_first = false;
 					}
 
 					else
 					{
-						if (tmp->ST == 0)
+						if (temp1->ST == 0)
 						{
-							program_counter += tmp->BLS;
-							if (tmp->BLS != 0)
-								tmp->TAT = program_counter;
-							tmp->WT = tmp->TAT - tmp->BT - tmp->AT;
-							if (tmp->WT < 0)
-								tmp->WT = 0;
-							tmp->EXT = true;
+							program_counter += temp1->BLS;
+							if (temp1->BLS != 0)
+								temp1->TAT = program_counter;
+							temp1->WT = temp1->TAT - temp1->BT - temp1->AT;
+							if (temp1->WT < 0)
+								temp1->WT = 0;
+							temp1->EXT = true;
 						}
 						else
 						{
 							program_counter += TQ;
-							tmp->TAT = program_counter;
-							tmp->ST--;
+							temp1->TAT = program_counter;
+							temp1->ST--;
 						}
 					}
 				}
@@ -1029,51 +1029,51 @@ void RoundR()
 					previous_ones_done = isPrevDone(clone_header, program_counter);
 					if (previous_ones_done)
 					{
-						program_counter = tmp->AT;
-						if (tmp->ST == 0)
+						program_counter = temp1->AT;
+						if (temp1->ST == 0)
 						{
-							program_counter += tmp->BLS;
-							if (tmp->BLS != 0)
-								tmp->TAT = program_counter;
-							tmp->WT = tmp->TAT - tmp->BT - tmp->AT;
-							if (tmp->WT < 0)
-								tmp->WT = 0;
-							tmp->EXT = true;
+							program_counter += temp1->BLS;
+							if (temp1->BLS != 0)
+								temp1->TAT = program_counter;
+							temp1->WT = temp1->TAT - temp1->BT - temp1->AT;
+							if (temp1->WT < 0)
+								temp1->WT = 0;
+							temp1->EXT = true;
 						}
 						else
 						{
 							program_counter += TQ;
-							tmp->TAT = program_counter;
-							tmp->ST--;
+							temp1->TAT = program_counter;
+							temp1->ST--;
 						}
 					}
 				}
 			}
 
 			is_first = false;
-			tmp = tmp->next;
+			temp1 = temp1->next;
 		}
 	}
 
 	strcpy(buff, "");
 	bubble_sort(&clone_header, number_of_process, "PID");
-	tmp2 = clone_header;
+	temp2 = clone_header;
 	system("clear");
 	snprintf(buff, 999, "Scheduling Method: Round-Robin (Time quantum: %d)\n", TQ);
 	strcat(buff, "Process\n");
-	while (tmp2 != NULL)
+	while (temp2 != NULL)
 	{
-		int pid = tmp2->Id;
-		int wait = tmp2->WT;
-		AWT += wait;
+		int pid = temp2->Id;
+		int wait = temp2->WT;
+		average_wait += wait;
 		char buff_1[20];
 		snprintf(buff_1, 19, "PS%d: %d ms\n", pid, wait);
 		strcat(buff, buff_1);
-		tmp2 = tmp2->next;
+		temp2 = temp2->next;
 	}
-	AWT /= number_of_process;
+	average_wait /= number_of_process;
 	char buff_2[40];
-	snprintf(buff_2, 39, "Average Waiting Time: %.3f ms\n\n", AWT);
+	snprintf(buff_2, 39, "Average Waiting Time: %.3f ms\n\n", average_wait);
 	strcat(buff, buff_2);
 	if (RoundRFirst)
 	{
@@ -1090,9 +1090,9 @@ void RoundR()
 void priorityNotPre()
 {
 	struct node *clone_header = cloneList(header_original);
-	struct node *temp, *tmp, *t;
+	struct node *temp, *temp1, *t;
 	int program_counter = 0;
-	float AWT = 0.0f;
+	float average_wait = 0.0f;
 	int number_of_process = pCounter(clone_header);
 	bubble_sort(&clone_header, number_of_process, "AT");
 	bubble_sort(&clone_header, number_of_process, "PS");
@@ -1101,7 +1101,7 @@ void priorityNotPre()
 	{
 		clone_header = deleteFront(clone_header);
 	}
-	t = tmp = temp;
+	t = temp1 = temp;
 
 	bool is_first = true;
 	while (temp != NULL)
@@ -1136,23 +1136,23 @@ void priorityNotPre()
 	}
 
 	strcpy(buff, "");
-	bubble_sort(&tmp, number_of_process, "PID");
+	bubble_sort(&temp1, number_of_process, "PID");
 	system("clear");
 	strcat(buff, "Scheduling Method: Priority Scheduling (Non-preemptive)\n");
 	strcat(buff, "Process\n");
-	while (tmp != NULL)
+	while (temp1 != NULL)
 	{
-		int pid = tmp->Id;
-		int wait = tmp->WT;
-		AWT += wait;
+		int pid = temp1->Id;
+		int wait = temp1->WT;
+		average_wait += wait;
 		char buff_1[20] = "";
 		snprintf(buff_1, 19, "PS%d: %d ms\n", pid, wait);
 		strcat(buff, buff_1);
-		tmp = tmp->next;
+		temp1 = temp1->next;
 	}
-	AWT /= number_of_process;
+	average_wait /= number_of_process;
 	char buff_2[40];
-	snprintf(buff_2, 39, "Average Waiting Time: %.3f ms\n\n", AWT);
+	snprintf(buff_2, 39, "Average Waiting Time: %.3f ms\n\n", average_wait);
 	strcat(buff, buff_2);
 	if (priorNotPreFirst)
 	{
@@ -1171,13 +1171,13 @@ void priorityNotPre()
 void priorityPre()
 {
 	struct node *clone_header = cloneList(header_original);
-	struct node *temp, *tmp, *tmp2;
+	struct node *temp, *temp1, *temp2;
 	int program_counter = 0;
-	float AWT = 0.0f;
+	float average_wait = 0.0f;
 	int number_of_process = pCounter(clone_header);
 	bubble_sort(&clone_header, number_of_process, "AT");
 	bubble_sort(&clone_header, number_of_process, "PS");
-	temp = tmp = tmp2 = clone_header;
+	temp = temp1 = temp2 = clone_header;
 
 	while (!isDone(clone_header))
 	{
@@ -1224,44 +1224,44 @@ void priorityPre()
 	}
 
 	bool is_first = true;
-	while (tmp != NULL)
+	while (temp1 != NULL)
 	{
 		if (is_first)
 		{
-			tmp->WT = tmp->TAT - tmp->BT;
-			if (tmp->WT < 0)
-				tmp->WT = 0;
+			temp1->WT = temp1->TAT - temp1->BT;
+			if (temp1->WT < 0)
+				temp1->WT = 0;
 
 			is_first = false;
 		}
 
 		else
 		{
-			tmp->WT = tmp->TAT - tmp->BT - tmp->AT;
-			if (tmp->WT < 0)
-				tmp->WT = 0;
+			temp1->WT = temp1->TAT - temp1->BT - temp1->AT;
+			if (temp1->WT < 0)
+				temp1->WT = 0;
 		}
-		tmp = tmp->next;
+		temp1 = temp1->next;
 	}
 
 	strcpy(buff, "");
-	bubble_sort(&tmp2, number_of_process, "PID");
+	bubble_sort(&temp2, number_of_process, "PID");
 	system("clear");
 	strcat(buff, "Scheduling Method: Priority Scheduling (preemptive)\n");
 	strcat(buff, "Process\n");
-	while (tmp2 != NULL)
+	while (temp2 != NULL)
 	{
-		int pid = tmp2->Id;
-		int wait = tmp2->WT;
-		AWT += wait;
+		int pid = temp2->Id;
+		int wait = temp2->WT;
+		average_wait += wait;
 		char buff_1[20] = "";
 		snprintf(buff_1, 19, "PS%d: %d ms\n", pid, wait);
 		strcat(buff, buff_1);
-		tmp2 = tmp2->next;
+		temp2 = temp2->next;
 	}
-	AWT /= number_of_process;
+	average_wait /= number_of_process;
 	char buff_2[40];
-	snprintf(buff_2, 39, "Average Waiting Time: %.3f ms\n\n", AWT);
+	snprintf(buff_2, 39, "Average Waiting Time: %.3f ms\n\n", average_wait);
 	strcat(buff, buff_2);
 	if (priorPreFirst)
 	{
